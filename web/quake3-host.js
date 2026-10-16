@@ -875,6 +875,8 @@
         return 0;
     }
 
+    let updateTouchVisibility = () => {};
+
     function setupInputHandlers() {
         const heldInputs = new Map();
         const mouseButtons = [K_MOUSE1, K_MOUSE3, K_MOUSE2, K_MOUSE4, K_MOUSE5];
@@ -899,6 +901,7 @@
         function releaseAllInputs() {
             for (const id of [...heldInputs.keys()]) releaseInput(id);
             lastClientX = lastClientY = null;
+            resetTouchControls();
         }
 
         window.addEventListener('blur', releaseAllInputs);
@@ -979,6 +982,336 @@
             wasmExports.wasm_q3_key_event(wheelKey, 1, t);
             wasmExports.wasm_q3_key_event(wheelKey, 0, t);
         }, { passive: false });
+
+        // ---------------------------------------------------------------------
+        // Touch Controls (Mobile & Tablet)
+        // ---------------------------------------------------------------------
+        const touchControlsEl = document.getElementById('touch-controls');
+        const touchToggleBtn = document.getElementById('btn-touch-toggle');
+        const touchZoneMove = document.getElementById('touch-zone-move');
+        const touchZoneLook = document.getElementById('touch-zone-look');
+        const touchStickBase = document.getElementById('touch-stick-base');
+        const touchStickThumb = document.getElementById('touch-stick-thumb');
+
+        const btnFire = document.getElementById('touch-btn-fire');
+        const btnJump = document.getElementById('touch-btn-jump');
+        const btnCrouch = document.getElementById('touch-btn-crouch');
+        const btnWeapon = document.getElementById('touch-btn-weapon');
+        const btnEsc = document.getElementById('touch-btn-esc');
+        const btnTab = document.getElementById('touch-btn-tab');
+
+        const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+        const storedTouchPref = localStorage.getItem('q3_touch_controls');
+        let touchEnabled = storedTouchPref !== null ? storedTouchPref === '1' : isTouchDevice;
+
+        function updateTouchState(forceActive) {
+            if (!touchControlsEl) return;
+            const active = forceActive !== undefined ? !!forceActive : (wasmExports ? !!wasmExports.wasm_q3_client_active() : false);
+            touchControlsEl.hidden = !(touchEnabled && active);
+            if (touchToggleBtn) {
+                touchToggleBtn.classList.toggle('active', touchEnabled);
+                const title = touchEnabled ? 'Dokunmatik kontrolleri gizle' : 'Dokunmatik kontrolleri göster';
+                touchToggleBtn.title = title;
+                touchToggleBtn.setAttribute('aria-label', title);
+            }
+        }
+        updateTouchVisibility = updateTouchState;
+        updateTouchState();
+
+        touchToggleBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            touchEnabled = !touchEnabled;
+            try { localStorage.setItem('q3_touch_controls', touchEnabled ? '1' : '0'); } catch (_) {}
+            updateTouchState();
+            if (!touchEnabled) resetTouchControls();
+        });
+
+        let moveTouchId = null;
+        let moveStartX = 0;
+        let moveStartY = 0;
+        const maxStickRadius = 45;
+        const stickDeadZone = 12;
+
+        let lookTouchId = null;
+        let lookLastX = 0;
+        let lookLastY = 0;
+
+        let fireTouchId = null;
+        let fireLastX = 0;
+        let fireLastY = 0;
+
+        function resetTouchControls() {
+            if (touchStickThumb) touchStickThumb.style.transform = 'translate(0px, 0px)';
+            if (touchStickBase) {
+                touchStickBase.style.left = '30px';
+                touchStickBase.style.bottom = '30px';
+                touchStickBase.style.top = 'auto';
+                touchStickBase.style.opacity = '0.75';
+            }
+            releaseInput('touch:W');
+            releaseInput('touch:S');
+            releaseInput('touch:A');
+            releaseInput('touch:D');
+            releaseInput('touch:jump');
+            releaseInput('touch:crouch');
+            releaseInput('touch:fire');
+            releaseInput('touch:tab');
+            btnFire?.classList.remove('active');
+            btnJump?.classList.remove('active');
+            btnCrouch?.classList.remove('active');
+            btnWeapon?.classList.remove('active');
+            btnEsc?.classList.remove('active');
+            btnTab?.classList.remove('active');
+            moveTouchId = null;
+            lookTouchId = null;
+            fireTouchId = null;
+        }
+
+        // --- Move Zone (Virtual Analog Stick) ---
+        if (touchZoneMove) {
+            touchZoneMove.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                ensureAudioUnlocked();
+                if (moveTouchId !== null) return;
+                const touch = e.changedTouches[0];
+                moveTouchId = touch.identifier;
+                const rect = touchZoneMove.getBoundingClientRect();
+                moveStartX = touch.clientX - rect.left;
+                moveStartY = touch.clientY - rect.top;
+                if (touchStickBase) {
+                    touchStickBase.style.left = `${moveStartX - 60}px`;
+                    touchStickBase.style.top = `${moveStartY - 60}px`;
+                    touchStickBase.style.bottom = 'auto';
+                    touchStickBase.style.opacity = '1';
+                }
+                if (touchStickThumb) {
+                    touchStickThumb.style.transform = 'translate(0px, 0px)';
+                }
+            }, { passive: false });
+
+            window.addEventListener('touchmove', (e) => {
+                if (moveTouchId === null) return;
+                let touch = null;
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === moveTouchId) {
+                        touch = e.changedTouches[i];
+                        break;
+                    }
+                }
+                if (!touch) return;
+                e.preventDefault();
+                const rect = touchZoneMove.getBoundingClientRect();
+                const curX = touch.clientX - rect.left;
+                const curY = touch.clientY - rect.top;
+                const dx = curX - moveStartX;
+                const dy = curY - moveStartY;
+                const dist = Math.hypot(dx, dy);
+
+                let thumbX = dx;
+                let thumbY = dy;
+                if (dist > maxStickRadius) {
+                    thumbX = (dx / dist) * maxStickRadius;
+                    thumbY = (dy / dist) * maxStickRadius;
+                }
+                if (touchStickThumb) {
+                    touchStickThumb.style.transform = `translate(${thumbX}px, ${thumbY}px)`;
+                }
+
+                // Map to WASD
+                if (dy < -stickDeadZone) pressInput('touch:W', 119); else releaseInput('touch:W');
+                if (dy > stickDeadZone) pressInput('touch:S', 115); else releaseInput('touch:S');
+                if (dx < -stickDeadZone) pressInput('touch:A', 97); else releaseInput('touch:A');
+                if (dx > stickDeadZone) pressInput('touch:D', 100); else releaseInput('touch:D');
+            }, { passive: false });
+
+            const onMoveEnd = (e) => {
+                if (moveTouchId === null) return;
+                let found = false;
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === moveTouchId) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) return;
+                if (touchStickThumb) touchStickThumb.style.transform = 'translate(0px, 0px)';
+                if (touchStickBase) {
+                    touchStickBase.style.left = '30px';
+                    touchStickBase.style.bottom = '30px';
+                    touchStickBase.style.top = 'auto';
+                    touchStickBase.style.opacity = '0.75';
+                }
+                releaseInput('touch:W');
+                releaseInput('touch:S');
+                releaseInput('touch:A');
+                releaseInput('touch:D');
+                moveTouchId = null;
+            };
+
+            window.addEventListener('touchend', onMoveEnd);
+            window.addEventListener('touchcancel', onMoveEnd);
+        }
+
+        // --- Look Zone (Camera Swipe) ---
+        if (touchZoneLook) {
+            touchZoneLook.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                ensureAudioUnlocked();
+                if (lookTouchId !== null) return;
+                const touch = e.changedTouches[0];
+                lookTouchId = touch.identifier;
+                lookLastX = touch.clientX;
+                lookLastY = touch.clientY;
+            }, { passive: false });
+
+            window.addEventListener('touchmove', (e) => {
+                if (lookTouchId === null) return;
+                let touch = null;
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === lookTouchId) {
+                        touch = e.changedTouches[i];
+                        break;
+                    }
+                }
+                if (!touch) return;
+                e.preventDefault();
+                const dx = touch.clientX - lookLastX;
+                const dy = touch.clientY - lookLastY;
+                lookLastX = touch.clientX;
+                lookLastY = touch.clientY;
+                if ((dx !== 0 || dy !== 0) && wasmExports && engineRunning) {
+                    wasmExports.wasm_q3_mouse_event(Math.round(dx * 2.2), Math.round(dy * 2.2), nowQ3Time());
+                }
+            }, { passive: false });
+
+            const onLookEnd = (e) => {
+                if (lookTouchId === null) return;
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === lookTouchId) {
+                        lookTouchId = null;
+                        break;
+                    }
+                }
+            };
+
+            window.addEventListener('touchend', onLookEnd);
+            window.addEventListener('touchcancel', onLookEnd);
+        }
+
+        // --- Fire Button (Primary attack + look swipe) ---
+        if (btnFire) {
+            btnFire.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                ensureAudioUnlocked();
+                const touch = e.changedTouches[0];
+                fireTouchId = touch.identifier;
+                fireLastX = touch.clientX;
+                fireLastY = touch.clientY;
+                btnFire.classList.add('active');
+                pressInput('touch:fire', K_MOUSE1);
+            }, { passive: false });
+
+            window.addEventListener('touchmove', (e) => {
+                if (fireTouchId === null) return;
+                let touch = null;
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === fireTouchId) {
+                        touch = e.changedTouches[i];
+                        break;
+                    }
+                }
+                if (!touch) return;
+                e.preventDefault();
+                const dx = touch.clientX - fireLastX;
+                const dy = touch.clientY - fireLastY;
+                fireLastX = touch.clientX;
+                fireLastY = touch.clientY;
+                if ((dx !== 0 || dy !== 0) && wasmExports && engineRunning) {
+                    wasmExports.wasm_q3_mouse_event(Math.round(dx * 2.2), Math.round(dy * 2.2), nowQ3Time());
+                }
+            }, { passive: false });
+
+            const onFireEnd = (e) => {
+                if (fireTouchId === null) return;
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                    if (e.changedTouches[i].identifier === fireTouchId) {
+                        btnFire.classList.remove('active');
+                        releaseInput('touch:fire');
+                        fireTouchId = null;
+                        break;
+                    }
+                }
+            };
+
+            window.addEventListener('touchend', onFireEnd);
+            window.addEventListener('touchcancel', onFireEnd);
+
+            btnFire.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                ensureAudioUnlocked();
+                btnFire.classList.add('active');
+                pressInput('touch:fire', K_MOUSE1);
+            });
+            btnFire.addEventListener('mouseup', () => {
+                btnFire.classList.remove('active');
+                releaseInput('touch:fire');
+            });
+            btnFire.addEventListener('mouseleave', () => {
+                btnFire.classList.remove('active');
+                releaseInput('touch:fire');
+            });
+        }
+
+        // --- Action Buttons ---
+        function bindTouchButton(btn, key, pulseOnly) {
+            if (!btn) return;
+            const inputId = `touch:${key}`;
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                ensureAudioUnlocked();
+                btn.classList.add('active');
+                if (pulseOnly) {
+                    if (wasmExports && engineRunning) {
+                        const t = nowQ3Time();
+                        wasmExports.wasm_q3_key_event(key, 1, t);
+                        wasmExports.wasm_q3_key_event(key, 0, t);
+                    }
+                } else {
+                    pressInput(inputId, key);
+                }
+            }, { passive: false });
+
+            const onEnd = () => {
+                btn.classList.remove('active');
+                if (!pulseOnly) releaseInput(inputId);
+            };
+
+            btn.addEventListener('touchend', onEnd);
+            btn.addEventListener('touchcancel', onEnd);
+
+            btn.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                ensureAudioUnlocked();
+                btn.classList.add('active');
+                if (pulseOnly) {
+                    if (wasmExports && engineRunning) {
+                        const t = nowQ3Time();
+                        wasmExports.wasm_q3_key_event(key, 1, t);
+                        wasmExports.wasm_q3_key_event(key, 0, t);
+                    }
+                } else {
+                    pressInput(inputId, key);
+                }
+            });
+            btn.addEventListener('mouseup', onEnd);
+            btn.addEventListener('mouseleave', onEnd);
+        }
+
+        bindTouchButton(btnJump, K_SPACE, false);
+        bindTouchButton(btnCrouch, K_CTRL, false);
+        bindTouchButton(btnWeapon, K_MWHEELUP, true);
+        bindTouchButton(btnEsc, K_ESCAPE, true);
+        bindTouchButton(btnTab, K_TAB, false);
     }
 
     // =========================================================================
@@ -1163,6 +1496,7 @@
             Q3Network.playing(active);
             statusOverlay.classList.toggle('hidden',active);
             Q3Lobby.show(!active&&!Q3Network.busy());
+            updateTouchVisibility(active);
             if(!active)setStatus(Q3Network.active()?'Maça bağlanılıyor…':'Hazır · Maça Katıl düğmesine bas',100);
             const fps = Math.round((frameCount * 1000) / (now - lastFpsTick));
             frameCount = 0;
@@ -1304,7 +1638,7 @@
         finally {button.disabled=false;}
     }
     document.getElementById('btn-online').addEventListener('click',()=>joinRoom(Q3Lobby.selected()));
-    function leaveMatch() {Q3Network.close();sendConsoleCommand('disconnect');if(document.pointerLockElement===canvas)document.exitPointerLock();document.getElementById('pointer-hint').textContent='Oynamak için oyun alanına tıkla · Esc ile fareyi bırak';}
+    function leaveMatch() {Q3Network.close();sendConsoleCommand('disconnect');if(document.pointerLockElement===canvas)document.exitPointerLock();document.getElementById('pointer-hint').textContent='Oynamak için oyun alanına tıkla · Esc ile fareyi bırak';updateTouchVisibility(false);}
     document.getElementById('btn-offline').addEventListener('click',leaveMatch);
     window.addEventListener('q3-network-closed',()=>{sendConsoleCommand('disconnect');if(document.pointerLockElement===canvas)document.exitPointerLock();});
     const bootPromise = bootQuake3();
