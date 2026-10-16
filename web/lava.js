@@ -27,7 +27,7 @@
     let burnOverlayEl = null;
 
     let audioCtx = null;
-    const COUNTDOWN_SECONDS = 30;
+    const COUNTDOWN_SECONDS = 10;
 
     // Safe platform heights per map (lava stops safely before reaching these heights)
     const MAP_LAVA_SETTINGS = {
@@ -140,7 +140,7 @@
             <div class="lava-timer-box">
                 <div class="lava-title" id="lava-title">🌋 DİKKAT: ZEMİN LAV OLUYOR!</div>
                 <div class="lava-timer-row">
-                    <span class="lava-sec" id="lava-timer-sec">30</span>
+                    <span class="lava-sec" id="lava-timer-sec">10</span>
                     <span class="lava-unit">SANİYE</span>
                 </div>
                 <div class="lava-bar-track">
@@ -198,7 +198,7 @@
         const currentSecInt = Math.ceil(remainingCountdown);
 
         // =====================================================================
-        // Phase 1: 30-Second Arcade Countdown
+        // Phase 1: 10-Second Arcade Countdown
         // =====================================================================
         if (remainingCountdown > 0) {
             timerSecEl.textContent = currentSecInt < 10 ? `0${currentSecInt}` : currentSecInt;
