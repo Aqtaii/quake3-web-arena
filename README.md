@@ -34,6 +34,14 @@ Boş odalar 5 dakika sonra kapatılır. WebSocket taşıması özgün paketleri
 taşır; standart masaüstü UDP istemcileri doğrudan bağlanamaz. Tarayıcı ve
 sunucu aynı WASM sürümünü ve PK3 verilerini kullanmalıdır.
 
+Odayı oluşturan tarayıcı, oda listesinde veya oyun başlığında çöp kutusu
+simgesiyle odayı silebilir. Onaydan sonra içindeki oyuncuların bağlantıları
+kapanır ve oda kapasitesi hemen boşalır. Sahiplik anahtarı yalnızca oluşturma
+yanıtında verilir ve tarayıcıda saklanır; davet bağlantısıyla paylaşılmaz.
+Farklı tarayıcıdan veya yerel depolama temizlendikten sonra silme yetkisi
+geri gelmez. Başkalarının odası silinemez. `node tests/room-delete.mjs`
+yetki, bağlantı kapanması ve kapasitenin serbest kalmasını test eder (8/8).
+
 Render için `render.yaml` hazırdır: başlangıç `node server/server.mjs`,
 sağlık kontrolü `/healthz`, `BIND_HOST=0.0.0.0`; port Render'ın `PORT`
 değişkeninden okunur. HTTPS sayfalar otomatik WSS kullanır. Henüz Render'a

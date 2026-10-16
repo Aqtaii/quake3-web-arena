@@ -1,5 +1,5 @@
 import http from 'node:http';
-import { createHash, randomBytes } from 'node:crypto';
+import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { createReadStream, statSync } from 'node:fs';
 import { resolve, extname, dirname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -19,7 +19,7 @@ async function makeRoom(name,map) {
     if(rooms.size+creating>=maxRooms)throw Error('Sunucu kapasitesi dolu. Mevcut bir maça katılın.');
     creating++;
     try {
-    const room={id:randomBytes(3).toString('hex').toUpperCase(),name,map,peers:new Map(),emptySince:Date.now()};
+    const room={id:randomBytes(3).toString('hex').toUpperCase(),ownerToken:randomBytes(32).toString('hex'),name,map,peers:new Map(),emptySince:Date.now()};
     room.engine=await createEngine(root,(peer,data)=> {
     const socket=room.peers.get(peer);
     if(socket && !socket.destroyed) { if(socket.writableLength>1048576) socket.destroy(); else socket.write(frame(2,data)); }
@@ -32,13 +32,29 @@ const server=http.createServer(async(req,res)=> {
     const json=(code,data)=> {res.writeHead(code,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify(data));};
     if(req.url==='/healthz') {json(200,{ok:true,rooms:rooms.size});return;}
     if(req.url==='/api/rooms'&&req.method==='GET') {json(200,{rooms:[...rooms.values()].map(roomInfo),maps,maxRooms});return;}
+    if(req.method==='DELETE'&&/^\/api\/rooms\/[A-F0-9]{6}$/.test(req.url)) {
+        let origin;try{origin=new URL(req.headers.origin);}catch{json(403,{error:'Geçersiz istek kaynağı.'});return;}
+        if(origin.host!==req.headers.host){json(403,{error:'Geçersiz istek kaynağı.'});return;}
+        const room=rooms.get(req.url.split('/').pop());
+        if(!room){json(404,{error:'Oda zaten kapatılmış.'});return;}
+        const token=(req.headers.authorization||'').replace(/^Bearer /,'');
+        if(!/^[a-f0-9]{64}$/.test(token)||!timingSafeEqual(Buffer.from(token,'hex'),Buffer.from(room.ownerToken,'hex'))){json(403,{error:'Bu odayı yalnızca oluşturan kişi silebilir.'});return;}
+        rooms.delete(room.id);
+        const close=Buffer.concat([Buffer.from([3,232]),Buffer.from('Room deleted')]);
+        for(const socket of room.peers.values()){
+            socket.end(frame(8,close));
+            setTimeout(()=>socket.destroy(),500).unref();
+        }
+        json(200,{deleted:room.id});return;
+    }
     if(req.url==='/api/rooms'&&req.method==='POST') {
         try {
             if(new URL(req.headers.origin).host!==req.headers.host)throw Error('Geçersiz istek kaynağı.');
             let body='';for await(const chunk of req){body+=chunk;if(Buffer.byteLength(body)>1024)throw Error('İstek çok büyük.');}
             const data=JSON.parse(body), name=String(data.name||'Arkadaş Maçı').replace(/[\x00-\x1f\x7f]/g,'').trim().slice(0,40);
             if(!maps.includes(data.map))throw Error('Geçersiz harita.');
-            json(201,roomInfo(await makeRoom(name||'Arkadaş Maçı',data.map)));
+            const room=await makeRoom(name||'Arkadaş Maçı',data.map);
+            json(201,{...roomInfo(room),ownerToken:room.ownerToken});
         } catch(error){json(400,{error:error.message});} return;
     }
     if(!['GET','HEAD'].includes(req.method)) {res.writeHead(405);res.end();return;}
