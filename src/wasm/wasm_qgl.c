@@ -50,6 +50,7 @@ WASM_IMPORT("env", "js_gl_stencil_mask") extern void js_gl_stencil_mask(unsigned
 WASM_IMPORT("env", "js_gl_stencil_op") extern void js_gl_stencil_op(unsigned int fail, unsigned int zfail, unsigned int zpass);
 WASM_IMPORT("env", "js_gl_stencil_test") extern void js_gl_stencil_test(int enabled);
 WASM_IMPORT("env", "js_gl_read_pixels") extern void js_gl_read_pixels(int x, int y, int width, int height, unsigned int format, unsigned int type, void *pixels);
+WASM_IMPORT("env", "js_gl_render_3d_lava") extern void js_gl_render_3d_lava(const float *mvp);
 
 /* Interleaved 32-byte vertex sent to WebGL2 */
 typedef struct {
@@ -166,6 +167,13 @@ static void mat4_mul(float *out, const float *a, const float *b) {
     memcpy(out, r, 16 * sizeof(float));
 }
 
+void Wasm_Render3DLava(const float *proj, const float *modelview) {
+    if (!proj || !modelview) return;
+    mat4_mul(g_world_mvp, proj, modelview);
+    g_has_world_mvp = 1;
+    js_gl_render_3d_lava(g_world_mvp);
+}
+
 static float *current_matrix(void) {
     if (g_matrix_mode == GL_PROJECTION) return g_proj_stack[g_proj_top];
     if (g_matrix_mode == GL_TEXTURE) return g_tex_stack[g_tex_top];
@@ -240,9 +248,6 @@ static void APIENTRY impl_glBlendFunc(GLenum sfactor, GLenum dfactor) {
 }
 
 static void APIENTRY impl_glClear(GLbitfield mask) {
-    if (mask & GL_DEPTH_BUFFER_BIT) {
-        g_has_world_mvp = 0;
-    }
     sync_gl_state();
     js_gl_clear(mask, g_clear_color[0], g_clear_color[1], g_clear_color[2], g_clear_color[3], g_clear_depth, g_clear_stencil);
 }

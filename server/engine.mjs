@@ -38,8 +38,8 @@ export async function createEngine(root, send, map = 'q3dm1') {
     const module = await WebAssembly.compile(readFileSync(join(root,'quake3.wasm')));
     for(const entry of WebAssembly.Module.imports(module)) {
         if(!env[entry.name]) {
-            if(!/^js_(gl_|audio_)/.test(entry.name)) throw Error('Unknown import: '+entry.name);
-            env[entry.name]=() => { throw Error('Dedicated server attempted graphics/audio: '+entry.name); };
+            if(!/^js_(gl_|audio_|q3_)/.test(entry.name)) throw Error('Unknown import: '+entry.name);
+            env[entry.name]=() => {};
         }
     }
     exports=(await WebAssembly.instantiate(module,{env})).exports; memory=exports.memory;

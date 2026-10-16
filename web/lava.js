@@ -31,11 +31,19 @@
 
     // Safe platform heights per map (lava stops safely before reaching these heights)
     const MAP_LAVA_SETTINGS = {
-        'q3dm1':      { startZ: -50, maxZ: -4, floorZ: -24, safeDescription: 'Kutuların ve merdivenlerin üstüne çık!' },
-        'q3dm7':      { startZ: -220, maxZ: -120, floorZ: -190, safeDescription: 'Üst platformlara tırman!' },
-        'q3dm17':     { startZ: -350, maxZ: -140, floorZ: -300, safeDescription: 'Platformlarda kal, boşluğa düşme!' },
-        'q3tourney2': { startZ: -50, maxZ: -4, floorZ: -24, safeDescription: 'Basamakların üstüne çık!' }
+        'q3dm1':      { startZ: -40, maxZ: -4, floorZ: -24, safeDescription: 'Kutuların ve merdivenlerin üstüne çık!' },
+        'q3dm7':      { startZ: -500, maxZ: -415, floorZ: -489, safeDescription: 'Üst platformlara tırman!' },
+        'q3dm17':     { startZ: -450, maxZ: -125, floorZ: -112, safeDescription: 'Platformlarda kal, boşluğa düşme!' },
+        'q3tourney2': { startZ: -180, maxZ: -90, floorZ: -168, safeDescription: 'Basamakların üstüne çık!' }
     };
+
+    function getMapSettings(mapName) {
+        const clean = (mapName || '').toLowerCase().replace(/^maps\//, '').replace(/\.bsp$/, '');
+        if (clean && MAP_LAVA_SETTINGS[clean]) {
+            return MAP_LAVA_SETTINGS[clean];
+        }
+        return { startZ: -150, maxZ: -20, floorZ: -100, safeDescription: 'Yüksek yerlere ve basamaklara çık!' };
+    }
 
     function getAudioContext() {
         if (!audioCtx && (window.AudioContext || window.webkitAudioContext)) {
@@ -178,7 +186,7 @@
             matchStartTime = now;
             hasLavaStarted = false;
             lavaExposure = 0;
-            const mapSettings = MAP_LAVA_SETTINGS[gameStatus.map] || MAP_LAVA_SETTINGS['q3dm1'];
+            const mapSettings = getMapSettings(gameStatus.map);
             lavaCurrentZ = mapSettings.startZ;
             lavaTargetZ = mapSettings.maxZ;
         }
@@ -222,7 +230,7 @@
             hudEl.classList.add('lava-active');
             titleEl.textContent = '🔥 DİKKAT: ZEMİN LAV OLDU! 🔥';
             titleEl.style.color = '#ff3300';
-            const mapSettings = MAP_LAVA_SETTINGS[gameStatus.map] || MAP_LAVA_SETTINGS['q3dm1'];
+            const mapSettings = getMapSettings(gameStatus.map);
             subtextEl.textContent = mapSettings.safeDescription;
         }
 
@@ -230,7 +238,7 @@
         const lavaRiseDuration = 15.0;
         const lavaTime = elapsedSec - COUNTDOWN_SECONDS;
         const riseProgress = Math.min(1.0, lavaTime / lavaRiseDuration);
-        const mapSettings = MAP_LAVA_SETTINGS[gameStatus.map] || MAP_LAVA_SETTINGS['q3dm1'];
+        const mapSettings = getMapSettings(gameStatus.map);
         lavaCurrentZ = mapSettings.startZ + (mapSettings.maxZ - mapSettings.startZ) * riseProgress;
 
         timerSecEl.textContent = 'LAV';

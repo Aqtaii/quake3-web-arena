@@ -657,8 +657,8 @@
             vao3dLava = gl.createVertexArray();
             gl.bindVertexArray(vao3dLava);
 
-            const GRID_SIZE = 64;
-            const WORLD_HALF = 4096.0;
+            const GRID_SIZE = 96;
+            const WORLD_HALF = 8192.0;
             const verts = new Float32Array((GRID_SIZE + 1) * (GRID_SIZE + 1) * 4);
             const indices = new Uint16Array(GRID_SIZE * GRID_SIZE * 6);
 
@@ -777,19 +777,34 @@
         }
     }
 
-    function render3dLava() {
+    function render3dLava(mvpPtr) {
         if (!window.Q3Lava?.isEnabled() || !window.Q3Lava?.hasStarted() || !prog3dLava || !vao3dLava) return;
         const lavaZ = window.Q3Lava.getCurrentZ();
         if (lavaZ < -900) return;
 
-        const mvpPtr = wasmExports?.wasm_q3_world_mvp ? wasmExports.wasm_q3_world_mvp() : 0;
+        ensureMemoryViews();
         let targetMvp = null;
         if (mvpPtr && f32Mem) {
             targetMvp = f32Mem.subarray(mvpPtr >> 2, (mvpPtr >> 2) + 16);
-        } else if (hasWorld3dMvp) {
+            lastWorld3dMvp.set(targetMvp);
+            hasWorld3dMvp = true;
+        } else if (wasmExports?.wasm_q3_world_mvp && f32Mem) {
+            const ptr = wasmExports.wasm_q3_world_mvp();
+            if (ptr) {
+                targetMvp = f32Mem.subarray(ptr >> 2, (ptr >> 2) + 16);
+                lastWorld3dMvp.set(targetMvp);
+                hasWorld3dMvp = true;
+            }
+        }
+        if (!targetMvp && hasWorld3dMvp) {
             targetMvp = lastWorld3dMvp;
         }
         if (!targetMvp) return;
+
+        // Lazy load pak0 texture if not loaded yet
+        if (!hasLavaTexLoaded && vfsFiles && vfsFiles.has('baseq3/pak0.pk3')) {
+            try { loadLavaTextureFromPak0(vfsFiles.get('baseq3/pak0.pk3')); } catch (_) {}
+        }
 
         gl.useProgram(prog3dLava);
         gl.bindVertexArray(vao3dLava);
@@ -806,11 +821,24 @@
         gl.enable(gl.DEPTH_TEST);
         gl.depthFunc(gl.LEQUAL);
         gl.depthMask(true);
+        gl.depthRange(0.0, 1.0);
         gl.disable(gl.CULL_FACE);
         gl.enable(gl.BLEND);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
         gl.drawElements(gl.TRIANGLES, numLavaIndices, gl.UNSIGNED_SHORT, 0);
+
+        // Invalidate GL state cache so Quake 3 restores its expected pipeline states
+        stDepthTest = -1;
+        stDepthFunc = -1;
+        stDepthMask = -1;
+        stDepthNear = -1;
+        stDepthFar = -1;
+        stBlend = -1;
+        stSrc = -1;
+        stDst = -1;
+        stCull = -1;
+        stCullFace = -1;
 
         // Restore Quake 3 state
         gl.useProgram(prog);
@@ -1027,19 +1055,6 @@
         if (numVerts <= 0 || numIndices <= 0) return;
         ensureMemoryViews();
 
-        const m11 = f32Mem[(mvpPtr >> 2) + 11];
-        const m15 = f32Mem[(mvpPtr >> 2) + 15];
-        const is3d = Math.abs(m11) > 0.01 && Math.abs(m15) < 0.01;
-
-        if (is3d) {
-            had3dWorldThisFrame = true;
-            lastWorld3dMvp.set(f32Mem.subarray(mvpPtr >> 2, (mvpPtr >> 2) + 16));
-            hasWorld3dMvp = true;
-        } else if (had3dWorldThisFrame) {
-            had3dWorldThisFrame = false;
-            render3dLava();
-        }
-
         gl.uniformMatrix4fv(locMvp, false, f32Mem, mvpPtr >> 2, 16);
         gl.uniformMatrix4fv(locMv, false, f32Mem, mvPtr >> 2, 16);
 
@@ -1119,10 +1134,6 @@
     }
 
     function jsGlEndFrame() {
-        if (had3dWorldThisFrame) {
-            had3dWorldThisFrame = false;
-            render3dLava();
-        }
         shownDraws = frameDrawCalls;
         frameDrawCalls = 0;
     }
@@ -1839,6 +1850,8 @@
         js_gl_delete_texture: jsGlDeleteTexture,
         js_gl_draw: jsGlDraw,
         js_gl_end_frame: jsGlEndFrame,
+        js_gl_render_3d_lava: (mvpPtr) => render3dLava(mvpPtr),
+        js_q3_render_3d_lava: (mvpPtr) => render3dLava(mvpPtr),
         js_gl_get_error: () => gl.getError(),
         js_gl_stencil_func: (func, ref, mask) => gl.stencilFunc(func, ref, mask),
         js_gl_stencil_mask: (mask) => gl.stencilMask(mask),

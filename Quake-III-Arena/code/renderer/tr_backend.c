@@ -665,6 +665,11 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 	// add light flares on lights that aren't obscured
 	RB_RenderFlares();
 
+	{
+		extern void Wasm_Render3DLava(const float *proj, const float *modelview);
+		Wasm_Render3DLava(backEnd.viewParms.projectionMatrix, backEnd.viewParms.world.modelMatrix);
+	}
+
 #ifdef __MACOS__
 	Sys_PumpEvents();		// crutch up the mac's limited buffer queue size
 #endif
