@@ -3,6 +3,16 @@
 #include <string.h>
 
 #define WASM_IMPORT(module, name) __attribute__((import_module(module), import_name(name)))
+#define WASM_EXPORT(name) __attribute__((export_name(#name), visibility("default")))
+
+/* 3D World MVP Snapshot for 3D In-Game Lava & Effects */
+static float g_world_mvp[16];
+static int g_has_world_mvp = 0;
+
+WASM_EXPORT(wasm_q3_world_mvp)
+const float *wasm_q3_world_mvp(void) {
+    return g_has_world_mvp ? g_world_mvp : NULL;
+}
 
 /* WebGL2 Host Bridge Imports */
 WASM_IMPORT("env", "js_gl_init") extern void js_gl_init(int *width, int *height);
@@ -230,6 +240,9 @@ static void APIENTRY impl_glBlendFunc(GLenum sfactor, GLenum dfactor) {
 }
 
 static void APIENTRY impl_glClear(GLbitfield mask) {
+    if (mask & GL_DEPTH_BUFFER_BIT) {
+        g_has_world_mvp = 0;
+    }
     sync_gl_state();
     js_gl_clear(mask, g_clear_color[0], g_clear_color[1], g_clear_color[2], g_clear_color[3], g_clear_depth, g_clear_stencil);
 }
@@ -573,6 +586,11 @@ static void APIENTRY impl_glDrawElements(GLenum mode, GLsizei count, GLenum type
         return;
     }
 
+    if (g_mv_top == 0 && g_depth_test && (g_proj_stack[g_proj_top][11] != 0.0f)) {
+        memcpy(g_world_mvp, g_mvp, sizeof(g_world_mvp));
+        g_has_world_mvp = 1;
+    }
+
     js_gl_draw(
         mode,
         g_vbuf, num_verts,
@@ -683,6 +701,11 @@ static void APIENTRY impl_glEnd(void) {
     }
 
     if (icount <= 0) return;
+
+    if (g_mv_top == 0 && g_depth_test && (g_proj_stack[g_proj_top][11] != 0.0f)) {
+        memcpy(g_world_mvp, g_mvp, sizeof(g_world_mvp));
+        g_has_world_mvp = 1;
+    }
 
     sync_gl_state();
     js_gl_draw(

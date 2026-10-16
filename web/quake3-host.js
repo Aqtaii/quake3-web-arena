@@ -552,6 +552,281 @@
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
+    // =========================================================================
+    // 3D In-Game Molten Lava Engine (WebGL2 True 3D World Surface)
+    // =========================================================================
+    const vs3dLavaSource = `#version 300 es
+    precision highp float;
+    layout(location = 0) in vec2 a_pos;
+    layout(location = 1) in vec2 a_uv;
+    uniform mat4 u_mvp;
+    uniform float u_lava_z;
+    uniform float u_time;
+    out vec2 v_uv;
+    out vec3 v_world_pos;
+    out float v_wave;
+
+    void main() {
+        float wave1 = sin(a_pos.x * 0.016 + u_time * 2.2) * 2.4;
+        float wave2 = cos(a_pos.y * 0.022 - u_time * 1.7) * 2.0;
+        float wave3 = sin((a_pos.x + a_pos.y) * 0.01 + u_time * 1.3) * 1.6;
+        float totalWave = wave1 + wave2 + wave3;
+
+        vec3 worldPos = vec3(a_pos.x, a_pos.y, u_lava_z + totalWave);
+        v_world_pos = worldPos;
+        v_wave = totalWave;
+        v_uv = a_uv;
+        gl_Position = u_mvp * vec4(worldPos, 1.0);
+    }
+    `;
+
+    const fs3dLavaSource = `#version 300 es
+    precision highp float;
+    in vec2 v_uv;
+    in vec3 v_world_pos;
+    in float v_wave;
+    uniform float u_time;
+    uniform sampler2D u_lava_tex;
+    uniform int u_has_tex;
+    out vec4 fragColor;
+
+    void main() {
+        float t = u_time * 0.55;
+        vec2 uv = v_uv * 0.35;
+        
+        // Dynamic procedural turbulence
+        float n1 = sin(uv.x * 6.0 + t * 1.3) * cos(uv.y * 6.0 - t * 1.1);
+        float n2 = sin(uv.x * 12.0 - t * 1.7 + n1 * 2.0) * cos(uv.y * 12.0 + t * 1.4);
+        float turb = n1 * 0.6 + n2 * 0.4;
+        
+        vec3 crust = vec3(0.12, 0.02, 0.01);
+        vec3 magma = vec3(0.96, 0.28, 0.02);
+        vec3 glow  = vec3(1.0, 0.94, 0.38);
+        
+        float crack = smoothstep(-0.25, 0.45, turb);
+        float hot = smoothstep(0.35, 0.8, turb);
+        
+        vec3 color = mix(crust, magma, crack);
+        color = mix(color, glow, hot);
+        
+        if (u_has_tex != 0) {
+            vec2 scrollUv1 = v_uv * 0.4 + vec2(t * 0.04, t * 0.025);
+            vec2 scrollUv2 = v_uv * 0.4 + vec2(-t * 0.03, t * 0.05);
+            vec4 tex1 = texture(u_lava_tex, scrollUv1);
+            vec4 tex2 = texture(u_lava_tex, scrollUv2);
+            vec3 blendedTex = (tex1.rgb + tex2.rgb) * 0.65;
+            color = mix(blendedTex, color, 0.42);
+            color += glow * (hot * 0.35);
+        }
+        
+        // Wave crest glow highlight
+        float crest = smoothstep(1.5, 4.0, v_wave) * 0.35;
+        color += vec3(1.0, 0.7, 0.2) * crest;
+        
+        fragColor = vec4(color, 0.96);
+    }
+    `;
+
+    let prog3dLava = null;
+    let loc3dMvp = null, loc3dLavaZ = null, loc3dTime = null, loc3dTex = null, loc3dHasTex = null;
+    let vao3dLava = null, vbo3dLava = null, ibo3dLava = null;
+    let numLavaIndices = 0;
+    let lava3dTexture = null;
+    let hasLavaTexLoaded = false;
+    let lastWorld3dMvp = new Float32Array(16);
+    let hasWorld3dMvp = false;
+    let had3dWorldThisFrame = false;
+
+    function init3dLavaPipeline() {
+        try {
+            prog3dLava = gl.createProgram();
+            gl.attachShader(prog3dLava, compileShader(gl.VERTEX_SHADER, vs3dLavaSource));
+            gl.attachShader(prog3dLava, compileShader(gl.FRAGMENT_SHADER, fs3dLavaSource));
+            gl.linkProgram(prog3dLava);
+            if (!gl.getProgramParameter(prog3dLava, gl.LINK_STATUS)) {
+                console.error('3D Lava program link failed:', gl.getProgramInfoLog(prog3dLava));
+                return;
+            }
+            loc3dMvp = gl.getUniformLocation(prog3dLava, 'u_mvp');
+            loc3dLavaZ = gl.getUniformLocation(prog3dLava, 'u_lava_z');
+            loc3dTime = gl.getUniformLocation(prog3dLava, 'u_time');
+            loc3dTex = gl.getUniformLocation(prog3dLava, 'u_lava_tex');
+            loc3dHasTex = gl.getUniformLocation(prog3dLava, 'u_has_tex');
+
+            vao3dLava = gl.createVertexArray();
+            gl.bindVertexArray(vao3dLava);
+
+            const GRID_SIZE = 64;
+            const WORLD_HALF = 4096.0;
+            const verts = new Float32Array((GRID_SIZE + 1) * (GRID_SIZE + 1) * 4);
+            const indices = new Uint16Array(GRID_SIZE * GRID_SIZE * 6);
+
+            let vIdx = 0;
+            for (let j = 0; j <= GRID_SIZE; j++) {
+                const y = -WORLD_HALF + (j / GRID_SIZE) * (WORLD_HALF * 2.0);
+                const v = y / 256.0;
+                for (let i = 0; i <= GRID_SIZE; i++) {
+                    const x = -WORLD_HALF + (i / GRID_SIZE) * (WORLD_HALF * 2.0);
+                    const u = x / 256.0;
+                    verts[vIdx++] = x;
+                    verts[vIdx++] = y;
+                    verts[vIdx++] = u;
+                    verts[vIdx++] = v;
+                }
+            }
+
+            let iIdx = 0;
+            for (let j = 0; j < GRID_SIZE; j++) {
+                for (let i = 0; i < GRID_SIZE; i++) {
+                    const r1 = j * (GRID_SIZE + 1) + i;
+                    const r2 = (j + 1) * (GRID_SIZE + 1) + i;
+                    indices[iIdx++] = r1;
+                    indices[iIdx++] = r2;
+                    indices[iIdx++] = r1 + 1;
+                    indices[iIdx++] = r1 + 1;
+                    indices[iIdx++] = r2;
+                    indices[iIdx++] = r2 + 1;
+                }
+            }
+            numLavaIndices = indices.length;
+
+            vbo3dLava = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vbo3dLava);
+            gl.bufferData(gl.ARRAY_BUFFER, verts, gl.STATIC_DRAW);
+
+            ibo3dLava = gl.createBuffer();
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo3dLava);
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
+
+            gl.enableVertexAttribArray(0);
+            gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 16, 0); // a_pos (x, y)
+            gl.enableVertexAttribArray(1);
+            gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 16, 8); // a_uv (u, v)
+
+            gl.bindVertexArray(vao); // Restore Quake 3 VAO
+
+            // Procedural fallback magma texture
+            lava3dTexture = gl.createTexture();
+            const fb = new Uint8Array(64 * 64 * 4);
+            for (let p = 0; p < 64 * 64; p++) {
+                const px = p % 64, py = Math.floor(p / 64);
+                const n = Math.sin(px * 0.2) * Math.cos(py * 0.2);
+                fb[p * 4] = Math.floor(220 + n * 35);
+                fb[p * 4 + 1] = Math.floor(65 + n * 35);
+                fb[p * 4 + 2] = 10;
+                fb[p * 4 + 3] = 255;
+            }
+            gl.bindTexture(gl.TEXTURE_2D, lava3dTexture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 64, 64, 0, gl.RGBA, gl.UNSIGNED_BYTE, fb);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+        } catch (e) {
+            console.error('Failed to init 3D lava pipeline:', e);
+        }
+    }
+
+    async function loadLavaTextureFromPak0(pak0Bytes) {
+        if (!pak0Bytes || hasLavaTexLoaded || !gl || !lava3dTexture) return;
+        try {
+            const view = new DataView(pak0Bytes.buffer, pak0Bytes.byteOffset, pak0Bytes.byteLength);
+            let end = -1;
+            for (let o = pak0Bytes.length - 22; o >= Math.max(0, pak0Bytes.length - 65557); o--) {
+                if (view.getUint32(o, true) === 0x06054b50) { end = o; break; }
+            }
+            if (end < 0) return;
+            const count = view.getUint16(end + 10, true);
+            let cur = view.getUint32(end + 16, true);
+            const dec = new TextDecoder('utf-8');
+            for (let i = 0; i < count; i++) {
+                const nameLen = view.getUint16(cur + 28, true);
+                const extraLen = view.getUint16(cur + 30, true);
+                const commentLen = view.getUint16(cur + 32, true);
+                const compSize = view.getUint32(cur + 20, true);
+                const method = view.getUint16(cur + 10, true);
+                const local = view.getUint32(cur + 42, true);
+                const name = dec.decode(pak0Bytes.subarray(cur + 46, cur + 46 + nameLen)).toLowerCase();
+                if (name === 'textures/liquids/lavahell.jpg') {
+                    const nlen = view.getUint16(local + 26, true);
+                    const elen = view.getUint16(local + 28, true);
+                    const raw = pak0Bytes.subarray(local + 30 + nlen + elen, local + 30 + nlen + elen + compSize);
+                    let jpegBytes = raw;
+                    if (method === 8) {
+                        const ds = new DecompressionStream('deflate-raw');
+                        const resp = new Response(new Response(raw).body.pipeThrough(ds));
+                        jpegBytes = new Uint8Array(await resp.arrayBuffer());
+                    }
+                    const blob = new Blob([jpegBytes], { type: 'image/jpeg' });
+                    const img = await createImageBitmap(blob);
+                    gl.bindTexture(gl.TEXTURE_2D, lava3dTexture);
+                    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+                    gl.generateMipmap(gl.TEXTURE_2D);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+                    hasLavaTexLoaded = true;
+                    break;
+                }
+                cur += 46 + nameLen + extraLen + commentLen;
+            }
+        } catch (err) {
+            console.warn('Lava texture load notice:', err);
+        }
+    }
+
+    function render3dLava() {
+        if (!window.Q3Lava?.isEnabled() || !window.Q3Lava?.hasStarted() || !prog3dLava || !vao3dLava) return;
+        const lavaZ = window.Q3Lava.getCurrentZ();
+        if (lavaZ < -900) return;
+
+        const mvpPtr = wasmExports?.wasm_q3_world_mvp ? wasmExports.wasm_q3_world_mvp() : 0;
+        let targetMvp = null;
+        if (mvpPtr && f32Mem) {
+            targetMvp = f32Mem.subarray(mvpPtr >> 2, (mvpPtr >> 2) + 16);
+        } else if (hasWorld3dMvp) {
+            targetMvp = lastWorld3dMvp;
+        }
+        if (!targetMvp) return;
+
+        gl.useProgram(prog3dLava);
+        gl.bindVertexArray(vao3dLava);
+
+        gl.uniformMatrix4fv(loc3dMvp, false, targetMvp);
+        gl.uniform1f(loc3dLavaZ, lavaZ);
+        gl.uniform1f(loc3dTime, performance.now() * 0.001);
+        gl.uniform1i(loc3dHasTex, hasLavaTexLoaded ? 1 : 0);
+
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, lava3dTexture);
+        gl.uniform1i(loc3dTex, 0);
+
+        gl.enable(gl.DEPTH_TEST);
+        gl.depthFunc(gl.LEQUAL);
+        gl.depthMask(true);
+        gl.disable(gl.CULL_FACE);
+        gl.enable(gl.BLEND);
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+        gl.drawElements(gl.TRIANGLES, numLavaIndices, gl.UNSIGNED_SHORT, 0);
+
+        // Restore Quake 3 state
+        gl.useProgram(prog);
+        gl.bindVertexArray(vao);
+        boundTex0 = null;
+        boundTex1 = null;
+        unifTex0Enabled = -1;
+        unifTex1Enabled = -1;
+        unifTex0HasAlpha = -1;
+        unifTex1HasAlpha = -1;
+        unifTex0Env = -1;
+        unifTex1Env = -1;
+        unifAlphaTest = -1;
+        unifClipEnabled = -1;
+    }
+    init3dLavaPipeline();
+
     const glTextures = new Map();
     const textureHasAlpha = new Map();
 
@@ -590,6 +865,9 @@
     }
 
     function jsGlClear(mask, r, g, b, a, depth, stencil) {
+        if (mask & 0x0100) {
+            had3dWorldThisFrame = false;
+        }
         gl.clearColor(r, g, b, a);
         gl.clearDepth(depth);
         gl.clearStencil(stencil);
@@ -748,6 +1026,19 @@
         if (numVerts <= 0 || numIndices <= 0) return;
         ensureMemoryViews();
 
+        const m11 = f32Mem[(mvpPtr >> 2) + 11];
+        const m15 = f32Mem[(mvpPtr >> 2) + 15];
+        const is3d = Math.abs(m11) > 0.01 && Math.abs(m15) < 0.01;
+
+        if (is3d) {
+            had3dWorldThisFrame = true;
+            lastWorld3dMvp.set(f32Mem.subarray(mvpPtr >> 2, (mvpPtr >> 2) + 16));
+            hasWorld3dMvp = true;
+        } else if (had3dWorldThisFrame) {
+            had3dWorldThisFrame = false;
+            render3dLava();
+        }
+
         gl.uniformMatrix4fv(locMvp, false, f32Mem, mvpPtr >> 2, 16);
         gl.uniformMatrix4fv(locMv, false, f32Mem, mvPtr >> 2, 16);
 
@@ -827,6 +1118,10 @@
     }
 
     function jsGlEndFrame() {
+        if (had3dWorldThisFrame) {
+            had3dWorldThisFrame = false;
+            render3dLava();
+        }
         shownDraws = frameDrawCalls;
         frameDrawCalls = 0;
     }
@@ -1670,8 +1965,9 @@
                 setStatus('Orijinal oyun verileri bekleniyor.', 0);
                 appendConsoleLog(`[Veri] ${message}\nÜretilmiş harita ve geçici modeller yüklenmedi.\n`);
                 return;
-            }
-            const digest = await crypto.subtle.digest('SHA-256', vfsFiles.get('baseq3/pak0.pk3'));
+            const pak0Bytes = vfsFiles.get('baseq3/pak0.pk3');
+            try { loadLavaTextureFromPak0(pak0Bytes); } catch (_) {}
+            const digest = await crypto.subtle.digest('SHA-256', pak0Bytes);
             configStorageKey = 'q3wasm_config_' + Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
             try {
                 const savedConfig = localStorage.getItem(configStorageKey);
