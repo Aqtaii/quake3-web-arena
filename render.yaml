@@ -1,0 +1,15 @@
+# Render service: original-source WASM dedicated server + website.
+# No npm packages and no downloaded engine binaries.
+services:
+  - type: web
+    name: quake3-web-arena
+    runtime: node
+    plan: free
+    buildCommand: echo "Prebuilt source-compiled WASM; no dependencies"
+    startCommand: node server/server.mjs
+    healthCheckPath: /healthz
+    envVars:
+      - key: BIND_HOST
+        value: 0.0.0.0
+      - key: MAX_ROOMS
+        value: 1
