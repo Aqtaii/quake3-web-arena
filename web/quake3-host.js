@@ -1643,6 +1643,7 @@
                 vfsFiles.set(path, bytes);
             }
             updatePackageStatus();
+            try { window.Q3Showroom?.init(vfsFiles); } catch (_) {}
             if (!vfsFiles.has('baseq3/pak0.pk3')) {
                 const message = 'Orijinal Quake III Arena verileri bulunamadı. Oyun Verilerini Yükle düğmesinden baseq3 içindeki pak0.pk3 ve güncelleme paketlerini seç.';
                 if (dataStatus) dataStatus.textContent = message;
@@ -1693,12 +1694,14 @@
             const modelLobby = document.getElementById('lobby-player-model');
             if (modelHeader) modelHeader.value = savedModel;
             if (modelLobby) modelLobby.value = savedModel;
+            try { window.Q3Showroom?.setModel(savedModel); } catch (_) {}
 
             const onModelSelect = (e) => {
                 const val = e.target.value;
                 try { localStorage.setItem('q3_player_model', val); } catch (_) {}
                 if (modelHeader) modelHeader.value = val;
                 if (modelLobby) modelLobby.value = val;
+                try { window.Q3Showroom?.setModel(val); } catch (_) {}
                 if (engineRunning) {
                     sendConsoleCommand(`model "${val}"`);
                     sendConsoleCommand(`headmodel "${val}"`);
@@ -1762,6 +1765,7 @@
         try {
             sendConsoleCommand('disconnect');
             Q3Lobby.error('');Q3Lobby.show(false);
+            try { window.Q3Showroom?.setVisibility(false); } catch (_) {}
             await Q3Network.connect(room);
             Q3Lobby.joined(room);
             const name=document.getElementById('player-name').value.replace(/[^a-zA-Z0-9 _-]/g,'').trim().slice(0,24)||'Oyuncu';
@@ -1771,13 +1775,13 @@
             sendConsoleCommand(`headmodel "${selModel}"`);
             sendConsoleCommand('connect 10.0.0.1:27960');
             ensureAudioUnlocked();canvas.focus();
-        } catch(error) {appendConsoleLog(`[Online] ${error.message}\n`);Q3Lobby.show(true);Q3Lobby.error(error.message);consoleDrawer?.classList.add('open');}
+        } catch(error) {appendConsoleLog(`[Online] ${error.message}\n`);Q3Lobby.show(true);try { window.Q3Showroom?.setVisibility(true); } catch (_) {}Q3Lobby.error(error.message);consoleDrawer?.classList.add('open');}
         finally {button.disabled=false;}
     }
     document.getElementById('btn-online').addEventListener('click',()=>joinRoom(Q3Lobby.selected()));
-    function leaveMatch() {Q3Network.close();sendConsoleCommand('disconnect');if(document.pointerLockElement===canvas)document.exitPointerLock();document.getElementById('pointer-hint').textContent='Oynamak için oyun alanına tıkla · Esc ile fareyi bırak';updateTouchVisibility(false);}
+    function leaveMatch() {Q3Network.close();sendConsoleCommand('disconnect');if(document.pointerLockElement===canvas)document.exitPointerLock();document.getElementById('pointer-hint').textContent='Oynamak için oyun alanına tıkla · Esc ile fareyi bırak';updateTouchVisibility(false);try { window.Q3Showroom?.setVisibility(true); } catch (_) {}}
     document.getElementById('btn-offline').addEventListener('click',leaveMatch);
-    window.addEventListener('q3-network-closed',()=>{sendConsoleCommand('disconnect');if(document.pointerLockElement===canvas)document.exitPointerLock();});
+    window.addEventListener('q3-network-closed',()=>{sendConsoleCommand('disconnect');if(document.pointerLockElement===canvas)document.exitPointerLock();try { window.Q3Showroom?.setVisibility(true); } catch (_) {}});
     const bootPromise = bootQuake3();
 })();
 
