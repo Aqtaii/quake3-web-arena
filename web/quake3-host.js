@@ -1000,14 +1000,18 @@
         const btnEsc = document.getElementById('touch-btn-esc');
         const btnTab = document.getElementById('touch-btn-tab');
 
-        const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+        const isTouchDevice = ('ontouchstart' in window) ||
+            (navigator.maxTouchPoints > 0) ||
+            (navigator.msMaxTouchPoints > 0) ||
+            (window.matchMedia && (window.matchMedia('(pointer: coarse)').matches || window.matchMedia('(any-pointer: coarse)').matches)) ||
+            /iPad|iPhone|iPod|Android|Mobile/i.test(navigator.userAgent) ||
+            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
         const storedTouchPref = localStorage.getItem('q3_touch_controls');
         let touchEnabled = storedTouchPref !== null ? storedTouchPref === '1' : isTouchDevice;
 
-        function updateTouchState(forceActive) {
+        function updateTouchState() {
             if (!touchControlsEl) return;
-            const active = forceActive !== undefined ? !!forceActive : (wasmExports ? !!wasmExports.wasm_q3_client_active() : false);
-            touchControlsEl.hidden = !(touchEnabled && active);
+            touchControlsEl.hidden = !touchEnabled;
             if (touchToggleBtn) {
                 touchToggleBtn.classList.toggle('active', touchEnabled);
                 const title = touchEnabled ? 'Dokunmatik kontrolleri gizle' : 'Dokunmatik kontrolleri göster';
