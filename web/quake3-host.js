@@ -582,6 +582,7 @@
 
     const fs3dLavaSource = `#version 300 es
     precision highp float;
+    precision highp int;
     in vec2 v_uv;
     in vec3 v_world_pos;
     in float v_wave;
@@ -1965,6 +1966,7 @@
                 setStatus('Orijinal oyun verileri bekleniyor.', 0);
                 appendConsoleLog(`[Veri] ${message}\nÜretilmiş harita ve geçici modeller yüklenmedi.\n`);
                 return;
+            }
             const pak0Bytes = vfsFiles.get('baseq3/pak0.pk3');
             try { loadLavaTextureFromPak0(pak0Bytes); } catch (_) {}
             const digest = await crypto.subtle.digest('SHA-256', pak0Bytes);
