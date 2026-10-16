@@ -88,6 +88,7 @@
 
     function stopEngine(message) {
         engineRunning = false;
+        window.Q3Lava?.setEnabled(false);
         setEngineControls(false);
         giveAllWhenActive = false;
         dmaBufferPtr = 0;
@@ -1591,6 +1592,25 @@
             }
         }
 
+        if (window.Q3Lava?.isEnabled()) {
+            const active = !!(wasmExports && wasmExports.wasm_q3_client_active && wasmExports.wasm_q3_client_active());
+            if (active) {
+                const data = new Float32Array(wasmMemory.buffer, wasmExports.wasm_q3_status(), 16);
+                const status = {
+                    active: true,
+                    map: readCStr(wasmExports.wasm_q3_mapname()),
+                    origin: [data[1], data[2], data[3]],
+                    velocity: [data[4], data[5], data[6]],
+                    health: data[12],
+                    weapon: data[13],
+                    clientNum: data[15]
+                };
+                window.Q3Lava.update(status, sendConsoleCommand);
+            } else {
+                window.Q3Lava.update(null, sendConsoleCommand);
+            }
+        }
+
         frameCount++;
         const now = performance.now();
         if (now - lastFpsTick >= 500) {
@@ -1766,6 +1786,15 @@
             sendConsoleCommand('disconnect');
             Q3Lobby.error('');Q3Lobby.show(false);
             try { window.Q3Showroom?.setVisibility(false); } catch (_) {}
+            let roomData = window.Q3Lobby?.getRoom?.(room);
+            if (!roomData) {
+                try {
+                    const r = await fetch('/api/rooms/' + room);
+                    if (r.ok) roomData = await r.json();
+                } catch (_) {}
+            }
+            const isLava = roomData?.mode === 'lava';
+            window.Q3Lava?.setEnabled(isLava);
             await Q3Network.connect(room);
             Q3Lobby.joined(room);
             const name=document.getElementById('player-name').value.replace(/[^a-zA-Z0-9 _-]/g,'').trim().slice(0,24)||'Oyuncu';
@@ -1779,9 +1808,9 @@
         finally {button.disabled=false;}
     }
     document.getElementById('btn-online').addEventListener('click',()=>joinRoom(Q3Lobby.selected()));
-    function leaveMatch() {Q3Network.close();sendConsoleCommand('disconnect');if(document.pointerLockElement===canvas)document.exitPointerLock();document.getElementById('pointer-hint').textContent='Oynamak için oyun alanına tıkla · Esc ile fareyi bırak';updateTouchVisibility(false);try { window.Q3Showroom?.setVisibility(true); } catch (_) {}}
+    function leaveMatch() {window.Q3Lava?.setEnabled(false);Q3Network.close();sendConsoleCommand('disconnect');if(document.pointerLockElement===canvas)document.exitPointerLock();document.getElementById('pointer-hint').textContent='Oynamak için oyun alanına tıkla · Esc ile fareyi bırak';updateTouchVisibility(false);try { window.Q3Showroom?.setVisibility(true); } catch (_) {}}
     document.getElementById('btn-offline').addEventListener('click',leaveMatch);
-    window.addEventListener('q3-network-closed',()=>{sendConsoleCommand('disconnect');if(document.pointerLockElement===canvas)document.exitPointerLock();try { window.Q3Showroom?.setVisibility(true); } catch (_) {}});
+    window.addEventListener('q3-network-closed',()=>{window.Q3Lava?.setEnabled(false);sendConsoleCommand('disconnect');if(document.pointerLockElement===canvas)document.exitPointerLock();try { window.Q3Showroom?.setVisibility(true); } catch (_) {}});
     const bootPromise = bootQuake3();
 })();
 

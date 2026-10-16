@@ -15,11 +15,11 @@ function frame(opcode,data=Buffer.alloc(0)) {
     if(size<126) header[1]=size; else { header[1]=126; header.writeUInt16BE(size,2); }
     return Buffer.concat([header,data]);
 }
-async function makeRoom(name,map) {
+async function makeRoom(name,map,mode='normal') {
     if(rooms.size+creating>=maxRooms)throw Error('Sunucu kapasitesi dolu. Mevcut bir maça katılın.');
     creating++;
     try {
-    const room={id:randomBytes(3).toString('hex').toUpperCase(),ownerToken:randomBytes(32).toString('hex'),name,map,peers:new Map(),emptySince:Date.now()};
+    const room={id:randomBytes(3).toString('hex').toUpperCase(),ownerToken:randomBytes(32).toString('hex'),name,map,mode:mode==='lava'?'lava':'normal',peers:new Map(),emptySince:Date.now()};
     room.engine=await createEngine(root,(peer,data)=> {
     const socket=room.peers.get(peer);
     if(socket && !socket.destroyed) { if(socket.writableLength>1048576) socket.destroy(); else socket.write(frame(2,data)); }
@@ -27,11 +27,17 @@ async function makeRoom(name,map) {
     room.engine.frame(); rooms.set(room.id,room); return room;
     } finally {creating--;}
 }
-function roomInfo(room){return {id:room.id,name:room.name,map:room.map,players:room.peers.size,maxPlayers:8};}
+function roomInfo(room){return {id:room.id,name:room.name,map:room.map,mode:room.mode||'normal',players:room.peers.size,maxPlayers:8};}
 const server=http.createServer(async(req,res)=> {
     const json=(code,data)=> {res.writeHead(code,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify(data));};
     if(req.url==='/healthz') {json(200,{ok:true,rooms:rooms.size});return;}
     if(req.url==='/api/rooms'&&req.method==='GET') {json(200,{rooms:[...rooms.values()].map(roomInfo),maps,maxRooms});return;}
+    if(req.method==='GET'&&/^\/api\/rooms\/[A-F0-9]{6}$/.test(req.url)) {
+        const roomId=req.url.split('/').pop();
+        const room=rooms.get(roomId);
+        if(!room){json(404,{error:'Oda bulunamadı.'});return;}
+        json(200,roomInfo(room));return;
+    }
     if(req.method==='DELETE'&&/^\/api\/rooms\/[A-F0-9]{6}$/.test(req.url)) {
         let origin;try{origin=new URL(req.headers.origin);}catch{json(403,{error:'Geçersiz istek kaynağı.'});return;}
         if(origin.host!==req.headers.host){json(403,{error:'Geçersiz istek kaynağı.'});return;}
@@ -53,7 +59,8 @@ const server=http.createServer(async(req,res)=> {
             let body='';for await(const chunk of req){body+=chunk;if(Buffer.byteLength(body)>1024)throw Error('İstek çok büyük.');}
             const data=JSON.parse(body), name=String(data.name||'Arkadaş Maçı').replace(/[\x00-\x1f\x7f]/g,'').trim().slice(0,40);
             if(!maps.includes(data.map))throw Error('Geçersiz harita.');
-            const room=await makeRoom(name||'Arkadaş Maçı',data.map);
+            const mode=data.mode==='lava'?'lava':'normal';
+            const room=await makeRoom(name||'Arkadaş Maçı',data.map,mode);
             json(201,{...roomInfo(room),ownerToken:room.ownerToken});
         } catch(error){json(400,{error:error.message});} return;
     }
