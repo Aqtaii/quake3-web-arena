@@ -358,10 +358,11 @@
     const gl = canvas.getContext('webgl2', {
         alpha: false,
         depth: true,
-        stencil: true,
-        antialias: true,
+        stencil: false,
+        antialias: false,
         powerPreference: 'high-performance',
         preserveDrawingBuffer: false,
+        desynchronized: true,
     });
 
     if (!gl) {
@@ -598,6 +599,13 @@
         if (bits) gl.clear(bits);
     }
 
+    let stBlend = -1, stSrc = -1, stDst = -1;
+    let stDepthTest = -1, stDepthFunc = -1, stDepthMask = -1;
+    let stCull = -1, stCullFace = -1;
+    let stPolyOffset = -1, stPolyFactor = -1, stPolyUnits = -1;
+    let stColorMask = -1;
+    let stDepthNear = -1, stDepthFar = -1;
+
     function jsGlState(
         blendEnabled, srcFactor, dstFactor,
         depthTest, depthFunc, depthMask,
@@ -606,37 +614,59 @@
         colorMaskR, colorMaskG, colorMaskB, colorMaskA,
         depthNear, depthFar
     ) {
-        if (blendEnabled) {
-            gl.enable(gl.BLEND);
-            gl.blendFunc(srcFactor, dstFactor);
-        } else {
-            gl.disable(gl.BLEND);
+        if (blendEnabled !== stBlend || srcFactor !== stSrc || dstFactor !== stDst) {
+            stBlend = blendEnabled; stSrc = srcFactor; stDst = dstFactor;
+            if (blendEnabled) {
+                gl.enable(gl.BLEND);
+                gl.blendFunc(srcFactor, dstFactor);
+            } else {
+                gl.disable(gl.BLEND);
+            }
         }
 
-        if (depthTest) {
-            gl.enable(gl.DEPTH_TEST);
-            gl.depthFunc(depthFunc);
-        } else {
-            gl.disable(gl.DEPTH_TEST);
+        if (depthTest !== stDepthTest || depthFunc !== stDepthFunc) {
+            stDepthTest = depthTest; stDepthFunc = depthFunc;
+            if (depthTest) {
+                gl.enable(gl.DEPTH_TEST);
+                gl.depthFunc(depthFunc);
+            } else {
+                gl.disable(gl.DEPTH_TEST);
+            }
         }
-        gl.depthMask(!!depthMask);
-        gl.depthRange(depthNear, depthFar);
-
-        if (cullEnabled) {
-            gl.enable(gl.CULL_FACE);
-            gl.cullFace(cullFace);
-        } else {
-            gl.disable(gl.CULL_FACE);
+        if (depthMask !== stDepthMask) {
+            stDepthMask = depthMask;
+            gl.depthMask(!!depthMask);
         }
-
-        if (polyOffsetEnabled) {
-            gl.enable(gl.POLYGON_OFFSET_FILL);
-            gl.polygonOffset(polyFactor, polyUnits);
-        } else {
-            gl.disable(gl.POLYGON_OFFSET_FILL);
+        if (depthNear !== stDepthNear || depthFar !== stDepthFar) {
+            stDepthNear = depthNear; stDepthFar = depthFar;
+            gl.depthRange(depthNear, depthFar);
         }
 
-        gl.colorMask(!!colorMaskR, !!colorMaskG, !!colorMaskB, !!colorMaskA);
+        if (cullEnabled !== stCull || cullFace !== stCullFace) {
+            stCull = cullEnabled; stCullFace = cullFace;
+            if (cullEnabled) {
+                gl.enable(gl.CULL_FACE);
+                gl.cullFace(cullFace);
+            } else {
+                gl.disable(gl.CULL_FACE);
+            }
+        }
+
+        if (polyOffsetEnabled !== stPolyOffset || polyFactor !== stPolyFactor || polyUnits !== stPolyUnits) {
+            stPolyOffset = polyOffsetEnabled; stPolyFactor = polyFactor; stPolyUnits = polyUnits;
+            if (polyOffsetEnabled) {
+                gl.enable(gl.POLYGON_OFFSET_FILL);
+                gl.polygonOffset(polyFactor, polyUnits);
+            } else {
+                gl.disable(gl.POLYGON_OFFSET_FILL);
+            }
+        }
+
+        const cMask = (colorMaskR ? 1 : 0) | (colorMaskG ? 2 : 0) | (colorMaskB ? 4 : 0) | (colorMaskA ? 8 : 0);
+        if (cMask !== stColorMask) {
+            stColorMask = cMask;
+            gl.colorMask(!!colorMaskR, !!colorMaskG, !!colorMaskB, !!colorMaskA);
+        }
     }
 
     function jsGlTexImage2D(texId, level, internalFormat, width, height, pixelsPtr) {
@@ -681,6 +711,28 @@
         }
     }
 
+    let lastMemBuf = null;
+    let u8Mem = null;
+    let u16Mem = null;
+    let f32Mem = null;
+
+    function ensureMemoryViews() {
+        if (!wasmMemory) return;
+        if (wasmMemory.buffer !== lastMemBuf) {
+            lastMemBuf = wasmMemory.buffer;
+            u8Mem = new Uint8Array(lastMemBuf);
+            u16Mem = new Uint16Array(lastMemBuf);
+            f32Mem = new Float32Array(lastMemBuf);
+        }
+    }
+
+    let unifTex0Enabled = -1, unifTex1Enabled = -1;
+    let unifTex0HasAlpha = -1, unifTex1HasAlpha = -1;
+    let unifTex0Env = -1, unifTex1Env = -1;
+    let unifAlphaTest = -1, unifAlphaFunc = -1, unifAlphaRef = -1;
+    let unifClipEnabled = -1;
+    let boundTex0 = null, boundTex1 = null;
+
     function jsGlDraw(
         mode,
         vertsPtr, numVerts,
@@ -693,42 +745,81 @@
         clipPlaneEnabled, clipPlanePtr
     ) {
         if (numVerts <= 0 || numIndices <= 0) return;
+        ensureMemoryViews();
 
-        const mvp = new Float32Array(wasmMemory.buffer, mvpPtr, 16);
-        const mv  = new Float32Array(wasmMemory.buffer, mvPtr, 16);
-        gl.uniformMatrix4fv(locMvp, false, mvp);
-        gl.uniformMatrix4fv(locMv, false, mv);
+        gl.uniformMatrix4fv(locMvp, false, f32Mem, mvpPtr >> 2, 16);
+        gl.uniformMatrix4fv(locMv, false, f32Mem, mvPtr >> 2, 16);
 
-        gl.uniform1i(locTex0Enabled, tex0Enabled);
-        gl.uniform1i(locTex1Enabled, tex1Enabled);
-        gl.uniform1i(locTex0HasAlpha, textureHasAlpha.get(tex0Id) === false ? 0 : 1);
-        gl.uniform1i(locTex1HasAlpha, textureHasAlpha.get(tex1Id) === false ? 0 : 1);
-        gl.uniform1i(locTex0Env, tex0Env);
-        gl.uniform1i(locTex1Env, tex1Env);
-
-        gl.uniform1i(locAlphaTest, alphaTestEnabled);
-        gl.uniform1i(locAlphaFunc, alphaFunc);
-        gl.uniform1f(locAlphaRef, alphaRef);
-
-        gl.uniform1i(locClipEnabled, clipPlaneEnabled);
-        if (clipPlaneEnabled && clipPlanePtr) {
-            const cp = new Float32Array(wasmMemory.buffer, clipPlanePtr, 4);
-            gl.uniform4fv(locClipPlane, cp);
+        if (tex0Enabled !== unifTex0Enabled) {
+            unifTex0Enabled = tex0Enabled;
+            gl.uniform1i(locTex0Enabled, tex0Enabled);
+        }
+        if (tex1Enabled !== unifTex1Enabled) {
+            unifTex1Enabled = tex1Enabled;
+            gl.uniform1i(locTex1Enabled, tex1Enabled);
         }
 
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, (tex0Enabled && glTextures.get(tex0Id)) || fallbackTex);
+        const hasAlpha0 = textureHasAlpha.get(tex0Id) === false ? 0 : 1;
+        if (hasAlpha0 !== unifTex0HasAlpha) {
+            unifTex0HasAlpha = hasAlpha0;
+            gl.uniform1i(locTex0HasAlpha, hasAlpha0);
+        }
 
-        gl.activeTexture(gl.TEXTURE1);
-        gl.bindTexture(gl.TEXTURE_2D, (tex1Enabled && glTextures.get(tex1Id)) || fallbackTex);
+        const hasAlpha1 = textureHasAlpha.get(tex1Id) === false ? 0 : 1;
+        if (hasAlpha1 !== unifTex1HasAlpha) {
+            unifTex1HasAlpha = hasAlpha1;
+            gl.uniform1i(locTex1HasAlpha, hasAlpha1);
+        }
 
-        const vertBytes = new Uint8Array(wasmMemory.buffer, vertsPtr, numVerts * 32);
+        if (tex0Env !== unifTex0Env) {
+            unifTex0Env = tex0Env;
+            gl.uniform1i(locTex0Env, tex0Env);
+        }
+        if (tex1Env !== unifTex1Env) {
+            unifTex1Env = tex1Env;
+            gl.uniform1i(locTex1Env, tex1Env);
+        }
+
+        if (alphaTestEnabled !== unifAlphaTest) {
+            unifAlphaTest = alphaTestEnabled;
+            gl.uniform1i(locAlphaTest, alphaTestEnabled);
+        }
+        if (alphaFunc !== unifAlphaFunc) {
+            unifAlphaFunc = alphaFunc;
+            gl.uniform1i(locAlphaFunc, alphaFunc);
+        }
+        if (alphaRef !== unifAlphaRef) {
+            unifAlphaRef = alphaRef;
+            gl.uniform1f(locAlphaRef, alphaRef);
+        }
+
+        if (clipPlaneEnabled !== unifClipEnabled) {
+            unifClipEnabled = clipPlaneEnabled;
+            gl.uniform1i(locClipEnabled, clipPlaneEnabled);
+        }
+        if (clipPlaneEnabled && clipPlanePtr) {
+            gl.uniform4fv(locClipPlane, f32Mem, clipPlanePtr >> 2, 4);
+        }
+
+        const targetTex0 = (tex0Enabled && glTextures.get(tex0Id)) || fallbackTex;
+        if (targetTex0 !== boundTex0) {
+            boundTex0 = targetTex0;
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, targetTex0);
+        }
+
+        const targetTex1 = (tex1Enabled && glTextures.get(tex1Id)) || fallbackTex;
+        if (targetTex1 !== boundTex1) {
+            boundTex1 = targetTex1;
+            gl.activeTexture(gl.TEXTURE1);
+            gl.bindTexture(gl.TEXTURE_2D, targetTex1);
+        }
+
         gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-        gl.bufferSubData(gl.ARRAY_BUFFER, 0, vertBytes);
+        gl.bufferSubData(gl.ARRAY_BUFFER, 0, u8Mem, vertsPtr, numVerts * 32);
 
-        const idxWords = new Uint16Array(wasmMemory.buffer, indicesPtr, numIndices);
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
-        gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, 0, idxWords);
+        gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, 0, u16Mem, indicesPtr >> 1, numIndices);
 
         gl.drawElements(mode, numIndices, gl.UNSIGNED_SHORT, 0);
         frameDrawCalls++;
@@ -761,7 +852,7 @@
                 const stereoFrames = dmaSamples >> 1;
                 const ratio = dmaSpeed / audioCtx.sampleRate;
 
-                scriptNode = audioCtx.createScriptProcessor(2048, 0, 2);
+                scriptNode = audioCtx.createScriptProcessor(4096, 0, 2);
                 scriptNode.onaudioprocess = (ev) => {
                     const outL = ev.outputBuffer.getChannelData(0);
                     const outR = ev.outputBuffer.getChannelData(1);
@@ -771,26 +862,33 @@
                         return;
                     }
                     const pcm16 = new Int16Array(wasmMemory.buffer, dmaBufferPtr, dmaSamples);
-                    for (let i = 0; i < outL.length; i++) {
-                        const frameIdx = Math.floor(audioSampleCursor) & (stereoFrames - 1);
-                        const idx = frameIdx * 2;
-                        outL[i] = pcm16[idx] / 32768.0;
-                        outR[i] = pcm16[idx + 1] / 32768.0;
-                        audioPeakMax = Math.max(audioPeakMax, Math.abs(outL[i]), Math.abs(outR[i]));
-                        // Keep the sample until all output frames using it have
-                        // been produced (e.g. 22050 Hz input at 48000 Hz output).
-                        const previousCursor = Math.floor(audioSampleCursor);
+                    const len = outL.length;
+                    for (let i = 0; i < len; i++) {
+                        const f0 = Math.floor(audioSampleCursor);
+                        const frac = audioSampleCursor - f0;
+                        const idx0 = (f0 & (stereoFrames - 1)) * 2;
+                        const idx1 = ((f0 + 1) & (stereoFrames - 1)) * 2;
+
+                        // Linear interpolation between consecutive samples (eliminates aliasing crackle and buzzing)
+                        const s0L = pcm16[idx0],     s0R = pcm16[idx0 + 1];
+                        const s1L = pcm16[idx1],     s1R = pcm16[idx1 + 1];
+                        let valL = (s0L + (s1L - s0L) * frac) / 32768.0;
+                        let valR = (s0R + (s1R - s0R) * frac) / 32768.0;
+
+                        // Soft limiter to prevent digital clipping
+                        if (valL > 1.0) valL = 1.0; else if (valL < -1.0) valL = -1.0;
+                        if (valR > 1.0) valR = 1.0; else if (valR < -1.0) valR = -1.0;
+
+                        outL[i] = valL;
+                        outR[i] = valR;
+                        audioPeakMax = Math.max(audioPeakMax, Math.abs(valL), Math.abs(valR));
+
                         audioSampleCursor += ratio;
-                        for (let consumed = previousCursor; consumed < Math.floor(audioSampleCursor); consumed++) {
-                            const consumedIdx = (consumed & (stereoFrames - 1)) * 2;
-                            pcm16[consumedIdx] = 0;
-                            pcm16[consumedIdx + 1] = 0;
-                        }
                         if (audioSampleCursor >= stereoFrames) {
                             audioSampleCursor -= stereoFrames;
                         }
                     }
-                    audioFramesPlayed += outL.length;
+                    audioFramesPlayed += len;
                 };
                 scriptNode.connect(audioCtx.destination);
             } catch (_) {}
@@ -1579,12 +1677,24 @@
             wasmMemory = wasmExports.memory;
 
             setStatus('Quake III Arena motoru başlatılıyor (Com_Init)...', 90);
-            setupInputHandlers();
+            const isTouchOrMobile = ('ontouchstart' in window) ||
+                (navigator.maxTouchPoints > 0) ||
+                (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) ||
+                /iPad|iPhone|iPod|Android|Mobile/i.test(navigator.userAgent) ||
+                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+            const targetWidth = isTouchOrMobile ? 960 : canvas.width;
+            const targetHeight = isTouchOrMobile ? 720 : canvas.height;
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
 
             const cmdline =
                 '+set sv_pure 0 +set vm_game 0 +set vm_cgame 0 +set vm_ui 0 ' +
-                `+set r_mode -1 +set r_customwidth ${canvas.width} +set r_customheight ${canvas.height} ` +
-                '+set r_fullscreen 0 +set in_mouse 1 +set bot_enable 1';
+                `+set r_mode -1 +set r_customwidth ${targetWidth} +set r_customheight ${targetHeight} ` +
+                '+set r_fullscreen 0 +set in_mouse 1 +set bot_enable 1 ' +
+                '+set com_maxfps 125 +set r_finish 0 +set r_swapInterval 0 ' +
+                '+set s_mixahead 0.22 +set s_mixPreStep 0.08 +set r_dynamiclight 0';
+            setupInputHandlers();
             const cmdPtr = writeCStrToWasm(cmdline);
             wasmExports.wasm_q3_init(cmdPtr);
             wasmExports.wasm_q3_free(cmdPtr);
