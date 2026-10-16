@@ -2,7 +2,8 @@
   "edition": "demo",
   "packages": [
     "pak0.pk3",
+    "pak1.pk3",
     "pak9.pk3"
   ],
-  "source": "Quake III Arena Demo 1.11, original media with source inventory compatibility header"
+  "source": "Quake III Arena Demo 1.11, original media with Steve mod and inventory header"
 }

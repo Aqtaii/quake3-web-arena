@@ -1688,12 +1688,32 @@
             canvas.width = targetWidth;
             canvas.height = targetHeight;
 
+            const savedModel = localStorage.getItem('q3_player_model') || 'steve';
+            const modelHeader = document.getElementById('player-model');
+            const modelLobby = document.getElementById('lobby-player-model');
+            if (modelHeader) modelHeader.value = savedModel;
+            if (modelLobby) modelLobby.value = savedModel;
+
+            const onModelSelect = (e) => {
+                const val = e.target.value;
+                try { localStorage.setItem('q3_player_model', val); } catch (_) {}
+                if (modelHeader) modelHeader.value = val;
+                if (modelLobby) modelLobby.value = val;
+                if (engineRunning) {
+                    sendConsoleCommand(`model "${val}"`);
+                    sendConsoleCommand(`headmodel "${val}"`);
+                }
+            };
+            modelHeader?.addEventListener('change', onModelSelect);
+            modelLobby?.addEventListener('change', onModelSelect);
+
             const cmdline =
                 '+set sv_pure 0 +set vm_game 0 +set vm_cgame 0 +set vm_ui 0 ' +
                 `+set r_mode -1 +set r_customwidth ${targetWidth} +set r_customheight ${targetHeight} ` +
                 '+set r_fullscreen 0 +set in_mouse 1 +set bot_enable 1 ' +
                 '+set com_maxfps 125 +set r_finish 0 +set r_swapInterval 0 ' +
-                '+set s_mixahead 0.22 +set s_mixPreStep 0.08 +set r_dynamiclight 0';
+                '+set s_mixahead 0.22 +set s_mixPreStep 0.08 +set r_dynamiclight 0 ' +
+                `+set model "${savedModel}" +set headmodel "${savedModel}"`;
             setupInputHandlers();
             const cmdPtr = writeCStrToWasm(cmdline);
             wasmExports.wasm_q3_init(cmdPtr);
@@ -1745,7 +1765,10 @@
             await Q3Network.connect(room);
             Q3Lobby.joined(room);
             const name=document.getElementById('player-name').value.replace(/[^a-zA-Z0-9 _-]/g,'').trim().slice(0,24)||'Oyuncu';
+            const selModel = document.getElementById('lobby-player-model')?.value || document.getElementById('player-model')?.value || 'steve';
             sendConsoleCommand(`name "${name}"`);
+            sendConsoleCommand(`model "${selModel}"`);
+            sendConsoleCommand(`headmodel "${selModel}"`);
             sendConsoleCommand('connect 10.0.0.1:27960');
             ensureAudioUnlocked();canvas.focus();
         } catch(error) {appendConsoleLog(`[Online] ${error.message}\n`);Q3Lobby.show(true);Q3Lobby.error(error.message);consoleDrawer?.classList.add('open');}
