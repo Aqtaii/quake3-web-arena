@@ -12,7 +12,7 @@ export function readGameData(root) {
         new Set(maps).size !== maps.length) throw Error('Invalid installed map list');
     for (const list of [packages, serverPackages]) {
         if (!Array.isArray(list) || !list.length ||
-            list.some(name => typeof name !== 'string' || !/^pak[0-9]+\.pk3$/.test(name) ||
+            list.some(name => typeof name !== 'string' || !/^(?:pak[0-9]+|inferno-(?:map|textures-[0-9]{2}))\.pk3$/.test(name) ||
                 !existsSync(join(root, 'baseq3', name))) ||
             new Set(list).size !== list.length) throw Error('Invalid or missing game package');
     }

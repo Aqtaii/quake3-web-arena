@@ -10,7 +10,7 @@ export async function createEngine(root, send, map = 'q3dm1') {
     const manifest = readGameData(root);
     if (!manifest.maps.includes(map)) throw Error('Unsupported map');
     for (const name of manifest.serverPackages) {
-        if (!/^pak[0-9]+\.pk3$/.test(name)) throw Error('Invalid package');
+        if (!/^(?:pak[0-9]+|inferno-(?:map|textures-[0-9]{2}))\.pk3$/.test(name)) throw Error('Invalid package');
         const path=join(root,'baseq3',name);
         if(!packageCache.has(path))packageCache.set(path,readFileSync(path));
         files.set('baseq3/' + name, packageCache.get(path));

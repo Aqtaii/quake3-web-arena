@@ -1961,7 +1961,7 @@
             const manifest = await manifestResponse.json();
             if (!Array.isArray(manifest.packages)) throw new Error('Geçersiz oyun verisi listesi.');
             for (const name of manifest.packages) {
-                if (!/^pak[0-9]+\.pk3$/.test(name)) throw new Error('Geçersiz oyun paketi adı.');
+                if (!/^(?:pak[0-9]+|inferno-(?:map|textures-[0-9]{2}))\.pk3$/.test(name)) throw new Error('Geçersiz oyun paketi adı.');
                 const path = `baseq3/${name}`;
                 if (vfsFiles.has(path)) continue;
                 setStatus(`${name} yükleniyor...`, 20);

@@ -35,7 +35,9 @@ jobs:
           try {
             mkdirSync(join(fixture,'baseq3'));
             writeFileSync(join(fixture,'baseq3/pak0.pk3'),'');
-            const manifest={packages:['pak0.pk3'],maps:['q3dm1','inferno_wingman']};
+            writeFileSync(join(fixture,'baseq3/inferno-map.pk3'),'');
+            writeFileSync(join(fixture,'baseq3/inferno-textures-01.pk3'),'');
+            const manifest={packages:['pak0.pk3','inferno-map.pk3','inferno-textures-01.pk3'],serverPackages:['pak0.pk3','inferno-map.pk3'],maps:['q3dm1','inferno_wingman']};
             const save=()=>writeFileSync(join(fixture,'game-data.json'),JSON.stringify(manifest));
             save();assert.deepEqual(readGameData(fixture).maps,manifest.maps);
             manifest.maps=['../escape'];save();assert.throws(()=>readGameData(fixture));
