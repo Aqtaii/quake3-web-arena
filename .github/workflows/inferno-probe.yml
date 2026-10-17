@@ -31,7 +31,7 @@ jobs:
         run: |
           set -uo pipefail
           timeout 600 tools/downloader/DepotDownloader \
-            -app 730 -depot 2347770 -filelist files.txt -dir cs2 \
+            -app 730 -depot 2347770 -manifest 2520908610273941189 -filelist files.txt -dir cs2 \
             -validate -max-downloads 4 2>&1 | tee reports/steam-download.log
           result=${PIPESTATUS[0]}
           printf '%s\n' "$result" > reports/download-exit-code.txt
@@ -125,20 +125,20 @@ jobs:
           mkdir -p importer indexes
           for script in audit_export.py resolve_assets.py; do
             curl --fail --location --retry 3 --proto '=https' --tlsv1.2 \
-              "https://raw.githubusercontent.com/Aqtaii/quake3-web-arena/fbe7e415a25b1d06448782fbe6d6cc98dbc32154/tools/inferno/$script" \
+              "https://raw.githubusercontent.com/Aqtaii/quake3-web-arena/e5d319444c621f45edad4afa3a136af064a98538/tools/inferno/$script" \
               -o "importer/$script"
           done
           python3 -m py_compile importer/*.py
           printf '%s\n' 'game/csgo/pak01_dir.vpk' 'game/core/pak01_dir.vpk' > index-files.txt
           timeout 300 tools/downloader/DepotDownloader \
-            -app 730 -depot 2347770 -filelist index-files.txt -dir indexes \
+            -app 730 -depot 2347770 -manifest 2520908610273941189 -filelist index-files.txt -dir indexes \
             -validate -max-downloads 4 > reports/index-download.log 2>&1
           for pass in 1 2 3 4; do
             cp reports/export.log "reports/export-pass-$pass.log"
             python3 importer/resolve_assets.py \
               --log "reports/export-pass-$pass.log" --indexes indexes --game cs2/game \
               --downloader tools/downloader/DepotDownloader \
-              --report "reports/dependencies-$pass.json" --max-chunks 100 \
+              --report "reports/dependencies-$pass.json" --max-chunks 256 --batch-size 8 \
               > "reports/dependencies-$pass.log" 2>&1 || {
                 tail -n 60 "reports/dependencies-$pass.log"
                 exit 1
