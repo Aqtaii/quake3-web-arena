@@ -36,9 +36,20 @@ These metadata are not a playable map. In particular, `func_nav_blocker` changes
 bot navigation and must not be converted directly into a solid player wall.
 
 The dependency resolver reads official VPK indexes, requests required archive chunks
-one at a time, extracts requested resources, checks their VPK CRC32 and removes each
-chunk afterward. The export auditor checks geometry counts, buffer bounds and
+in bounded groups of eight, extracts requested resources, checks their VPK CRC32 and
+removes each chunk afterward. Dependencies use the same pinned Steam manifest. The export auditor checks geometry counts, buffer bounds and
 missing resource references. Both run on the GitHub runner, with no local project clone.
+
+[Run 39026500094](https://github.com/Aqtaii/quake3-web-arena/actions/runs/39026500094)
+successfully extracted 420 requested resources from 86 official chunks, with none
+missing from the package indexes. Its next texture pass required 152 chunks and hit
+the original 100-chunk diagnostic limit. This was not a complete textured export.
+The pipeline now allows up to 256 groups and batches requests to reduce repeated
+Steam connections while keeping temporary disk use bounded.
+
+[Import tool checks](https://github.com/Aqtaii/quake3-web-arena/actions/runs/39027165925)
+passed binary VPK parsing, corrupt archive/path rejection, accessor bounds,
+truncated-buffer detection and the original eight Wingman spawn placements.
 
 ## Conversion stages still required
 
