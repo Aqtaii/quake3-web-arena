@@ -16,6 +16,7 @@ COUNTS = {"SCALAR": 1, "VEC2": 2, "VEC3": 3, "VEC4": 4}
 
 MAX_PRIM_VERTS = 850
 MAX_PRIM_TRIS = 1700
+MAX_WORLD_COLLISION_TRIS = 19000
 
 PROTECTED_ARCH_RE = re.compile(
     r"floor|ground|wall04|wall_09_blend|facade|plaster|brick|tile|stair|step|ceiling|house|"
@@ -25,6 +26,19 @@ PROTECTED_ARCH_RE = re.compile(
     re.I,
 )
 TRIM_BLOCK_RE = re.compile(r"wall_09_trim|trim_block", re.I)
+
+FLOOR_NODE_RE = re.compile(
+    r"floor|ground|stair|step|road|pavement|cobble|gravel|dirt_blend|concrete_blend|"
+    r"concrete_02|courtyard|balcony|curb",
+    re.I,
+)
+
+WALL_NODE_RE = re.compile(
+    r"wall04|wall_09_blend|facade|plaster|brick|house|apartment_interior|arch|pillar|"
+    r"column|shop_front|wood_crate|concrete_bag|sandbag|door_simple|door_double|"
+    r"barn_door|rollup_door_02|barricade",
+    re.I,
+)
 
 PURE_CLUTTER_RE = re.compile(
     r"blocklight|cable_kit|hanging_clothes|door_details|rollup_door_details|wall_09_debris|"
@@ -142,9 +156,10 @@ def repair_render_and_collect_collision(baseq3):
     non_overlay_materials = set()
 
     render_box = ([256.0, -1018.5, 16.0], [2917.5, 1794.5, 752.0])
-    collision_box = ([384.0, -890.0, 60.0], [2790.0, 1667.0, 340.0])
+    collision_box = ([448.0, -826.0, 60.0], [2726.0, 1602.0, 235.0])
 
-    structural_collision_gltf_tris = []
+    floor_collision_tris = []
+    wall_collision_candidates = []
     kept_tris_total = 0
     kept_prims_total = 0
 
@@ -174,6 +189,8 @@ def repair_render_and_collect_collision(baseq3):
         is_overlay = "mesh_overlay" in node_name.lower()
         is_prot_arch = bool(PROTECTED_ARCH_RE.search(node_name)) and not bool(TRIM_BLOCK_RE.search(node_name))
         can_collide = not bool(NON_SOLID_NODE_RE.search(node_name))
+        is_floor_node = can_collide and bool(FLOOR_NODE_RE.search(node_name)) and not bool(TRIM_BLOCK_RE.search(node_name))
+        is_wall_node = can_collide and bool(WALL_NODE_RE.search(node_name)) and not bool(TRIM_BLOCK_RE.search(node_name))
 
         transform = matrices[node_id]
         new_primitives = []
@@ -205,11 +222,10 @@ def repair_render_and_collect_collision(baseq3):
                     continue
 
                 if can_collide and overlaps_box(p0, p1, p2, collision_box):
-                    # Walkable floors/stairs/ramps (abs_nz >= 0.45) or protected architectural walls/crates/doors (max_edge >= 16)
-                    if (abs_nz >= 0.45 and max_edge_sq >= 64.0 and area2_sq >= 4.0 and max(p0[2], p1[2], p2[2]) <= 260.0) or (
-                        is_prot_arch and max_edge_sq >= 256.0 and area2_sq >= 16.0
-                    ):
-                        structural_collision_gltf_tris.append((gltf_pts[i0], gltf_pts[i1], gltf_pts[i2]))
+                    if is_floor_node and abs_nz >= 0.45 and max_edge_sq >= 256.0 and area2_sq >= 16.0:
+                        floor_collision_tris.append((gltf_pts[i0], gltf_pts[i1], gltf_pts[i2]))
+                    elif is_wall_node and abs_nz < 0.45 and max_edge_sq >= 576.0 and area2_sq >= 256.0:
+                        wall_collision_candidates.append((area2_sq, (gltf_pts[i0], gltf_pts[i1], gltf_pts[i2])))
 
                 if not overlaps_box(p0, p1, p2, render_box):
                     continue
@@ -258,6 +274,12 @@ def repair_render_and_collect_collision(baseq3):
         if new_primitives:
             node["mesh"] = len(meshes)
             meshes.append({"name": node.get("name", "mesh"), "primitives": new_primitives})
+
+    wall_collision_candidates.sort(key=lambda item: item[0], reverse=True)
+    max_walls = max(0, MAX_WORLD_COLLISION_TRIS - len(floor_collision_tris))
+    selected_walls = [ item[1] for item in wall_collision_candidates[:max_walls] ]
+    structural_collision_gltf_tris = floor_collision_tris + selected_walls
+    print(f"World collision breakdown: {len(floor_collision_tris)} floor/stair tris + {len(selected_walls)} wall/crate/door tris (from {len(wall_collision_candidates)} candidates)", flush=True)
 
     render_path.with_suffix(".bin").write_bytes(new_blob)
     out_doc = {
@@ -439,7 +461,6 @@ def repair_map_and_shaders(baseq3, all_collision_src_tris, non_overlay_materials
             continue
         shader_name = lines[0].strip()
         if shader_name in non_overlay_materials and "blendFunc blend" in block:
-            # World 2-layer blend surface: render opaque with depth write, not semi-transparent banner
             filtered = []
             for line in lines:
                 if line.strip() in ("sort banner", "blendFunc blend", "polygonOffset"):
@@ -468,6 +489,7 @@ def optimize_textures(baseq3, used_material_names):
     kept_files = 0
     removed_files = 0
     total_bytes = 0
+    jpg_files = []
 
     for path in sorted(tex_dir.glob("*")):
         if not path.is_file():
@@ -496,20 +518,34 @@ def optimize_textures(baseq3, used_material_names):
                         d_off = dst_row + x * 4
                         out[d_off : d_off + 4] = src[p_off : p_off + 4]
                 path.write_bytes(out)
+            kept_files += 1
+            total_bytes += path.stat().st_size
         elif path.suffix.lower() == ".jpg":
-            out = subprocess.check_output(["identify", "-format", "%w %h", str(path)], text=True).strip()
-            w, h = map(int, out.split())
-            tw, th = next_pow2_down(w, 512), next_pow2_down(h, 512)
-            subprocess.check_call([
-                "convert", str(path),
-                "-resize", f"{tw}x{th}!",
-                "-quality", "90",
-                "-sampling-factor", "4:2:0",
-                "-strip",
-                str(path)
-            ])
-        kept_files += 1
-        total_bytes += path.stat().st_size
+            jpg_files.append(path)
+
+    if jpg_files:
+        try:
+            from PIL import Image
+            for path in jpg_files:
+                with Image.open(path) as im:
+                    w, h = im.size
+                    tw, th = next_pow2_down(w, 512), next_pow2_down(h, 512)
+                    if (tw, th) != (w, h):
+                        im = im.resize((tw, th), Image.Resampling.BILINEAR)
+                    im.convert("RGB").save(path, format="JPEG", quality=90, optimize=True)
+                kept_files += 1
+                total_bytes += path.stat().st_size
+            print("Resized JPEGs via Pillow", flush=True)
+        except ImportError:
+            print("Pillow not found, resizing JPEGs via ffmpeg...", flush=True)
+            for path in jpg_files:
+                tmp = path.with_suffix(".resized.jpg")
+                subprocess.check_call(
+                    ["ffmpeg", "-y", "-loglevel", "error", "-i", str(path), "-vf", "scale='min(512,iw)':'min(512,ih)'", "-q:v", "4", str(tmp)]
+                )
+                tmp.replace(path)
+                kept_files += 1
+                total_bytes += path.stat().st_size
 
     print(f"Optimized textures: kept {kept_files}, removed {removed_files} unused, total size = {total_bytes / (1024*1024):.2f} MB", flush=True)
 
