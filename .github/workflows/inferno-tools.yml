@@ -17,11 +17,11 @@ jobs:
           COMMIT: ${{ github.sha }}
         run: |
           set -euo pipefail
-          for file in audit_export.py resolve_assets.py wingman-source.json textures.mjs; do
+          for file in audit_export.py resolve_assets.py wingman-source.json textures.mjs wingman_region.py nav_areas.py prepare_map.py; do
             curl --fail --location --proto '=https' --tlsv1.2 \
               "https://raw.githubusercontent.com/Aqtaii/quake3-web-arena/$COMMIT/tools/inferno/$file" -o "$file"
           done
-          python3 -m py_compile audit_export.py resolve_assets.py
+          python3 -m py_compile audit_export.py resolve_assets.py wingman_region.py nav_areas.py prepare_map.py
           node --check textures.mjs
       - name: Check binary parsing and corrupted export rejection
         shell: bash
@@ -104,4 +104,34 @@ jobs:
           factor=(root/"factor.tga").read_bytes()
           assert list(factor[18:22])==[188,188,188,64]
           print("PASS: real browser PNG decoding, Quake TGA channel order, alpha mask and linear material tint")
+          PY
+      - name: Check source geometry crop and compact buffers
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, pathlib, struct, tempfile
+          from prepare_map import Geometry, crop_geometry
+          with tempfile.TemporaryDirectory() as name:
+              root=pathlib.Path(name)
+              # One original triangle inside the selected component, one far outside.
+              source_points=[(1000,300,100),(1064,300,100),(1000,364,100),
+                             (9000,300,100),(9064,300,100),(9000,364,100)]
+              data=b"".join(struct.pack("<3f",y*.0254,z*.0254,x*.0254) for x,y,z in source_points)
+              (root/"source.bin").write_bytes(data)
+              gltf={"asset":{"version":"2.0"},"scene":0,"scenes":[{"nodes":[0]}],
+                "nodes":[{"mesh":0}],"meshes":[{"primitives":[{"attributes":{"POSITION":0},"material":0}]}],
+                "materials":[{"name":"original"}],"buffers":[{"uri":"source.bin","byteLength":len(data)}],
+                "bufferViews":[{"buffer":0,"byteLength":len(data)}],
+                "accessors":[{"bufferView":0,"componentType":5126,"type":"VEC3","count":6,
+                              "min":[300*.0254,100*.0254,1000*.0254],
+                              "max":[364*.0254,100*.0254,9064*.0254]}]}
+              path=root/"source.gltf";path.write_text(json.dumps(gltf))
+              used,stats=crop_geometry(Geometry(path,root),[[500,-1000,-1e6],[3000,2000,1e6]],root/"out.gltf")
+              assert used=={0} and stats["retained_triangles"]==1 and stats["vertices"]==3
+              out=json.loads((root/"out.gltf").read_text())
+              accessor=out["accessors"][out["meshes"][0]["primitives"][0]["attributes"]["POSITION"]]
+              view=out["bufferViews"][accessor["bufferView"]]
+              result=(root/"out.bin").read_bytes()[view["byteOffset"]:view["byteOffset"]+view["byteLength"]]
+              assert result==data[:36], "Retained original position bytes changed"
+          print("PASS: original triangle bytes retained, out-of-region geometry excluded, buffer indices compacted")
           PY
