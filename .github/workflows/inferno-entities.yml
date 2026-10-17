@@ -31,7 +31,7 @@ jobs:
         run: |
           set -uo pipefail
           timeout 600 tools/downloader/DepotDownloader \
-            -app 730 -depot 2347770 -filelist files.txt -dir cs2 \
+            -app 730 -depot 2347770 -manifest 2520908610273941189 -filelist files.txt -dir cs2 \
             -validate -max-downloads 4 2>&1 | tee reports/steam-download.log
           result=${PIPESTATUS[0]}
           printf '%s\n' "$result" > reports/download-exit-code.txt
@@ -110,6 +110,11 @@ jobs:
           summary = [{"path": item["path"], "entities": [
               {key: entity["fields"][key] for key in keys if key in entity["fields"]}
               for entity in item["wingman_entities"]]} for item in records]
+          spawns = [entity for record in summary for entity in record["entities"]
+                    if entity.get("classname", "").startswith("info_player_")]
+          assert len(spawns) == 8, "Expected the original eight 2v2 spawns"
+          assert sum(entity["classname"] == "info_player_terrorist" for entity in spawns) == 4
+          assert sum(entity["classname"] == "info_player_counterterrorist" for entity in spawns) == 4
           print(json.dumps(summary, indent=2))
           PY
       - name: Preserve original entity diagnostics
