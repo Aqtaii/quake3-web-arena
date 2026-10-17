@@ -47,6 +47,33 @@ def audit_document(path, export_root):
         elif view.get("byteOffset", 0) + view.get("byteLength", 0) > buffers[index].get("byteLength", 0):
             errors.append("Buffer view exceeds buffer size")
     accessors = data.get("accessors", [])
+    component_bytes = {5120: 1, 5121: 1, 5122: 2, 5123: 2, 5125: 4, 5126: 4}
+    components = {"SCALAR": 1, "VEC2": 2, "VEC3": 3, "VEC4": 4, "MAT2": 4, "MAT3": 9, "MAT4": 16}
+    for accessor in accessors:
+        view_index = accessor.get("bufferView")
+        if view_index is None:
+            # Sparse or all-zero accessors are legal glTF; the converter must handle them explicitly.
+            continue
+        if not 0 <= view_index < len(views):
+            errors.append("Invalid accessor buffer view index")
+            continue
+        size = component_bytes.get(accessor.get("componentType"))
+        count = components.get(accessor.get("type"))
+        if size is None or count is None or accessor.get("count", 0) < 0:
+            errors.append("Invalid accessor component type or count")
+            continue
+        kind = accessor["type"]
+        element_size = size * count
+        if kind.startswith("MAT"):
+            dimension = int(kind[-1])
+            element_size = ((dimension * size + 3) // 4 * 4) * dimension
+        view = views[view_index]
+        stride = view.get("byteStride", element_size)
+        total = accessor.get("byteOffset", 0) + max(0, accessor.get("count", 0) - 1) * stride
+        if accessor.get("count", 0):
+            total += element_size
+        if stride < element_size or total > view.get("byteLength", 0):
+            errors.append("Accessor exceeds its buffer view")
     for mesh in data.get("meshes", []):
         for primitive in mesh.get("primitives", []):
             position = primitive.get("attributes", {}).get("POSITION", -1)
@@ -101,12 +128,17 @@ def main():
             documents.append({"file": str(path), "errors": [str(exc)]})
     log = log_path.read_text(encoding="utf-8", errors="replace") if log_path.exists() else ""
     unresolved = sorted(set(re.findall(r'Failed to load "([^"]+)"', log)))
-    valid = bool(documents) and not unresolved and all(
+    non_visual = [name for name in unresolved if name.startswith(
+        ("materials/tools/", "materials/tools_", "materials/editor/")
+    )]
+    required = [name for name in unresolved if name not in non_visual]
+    valid = bool(documents) and not required and all(
         not doc.get("errors") and not doc.get("missing_files") for doc in documents
     )
     result = {
         "documents": documents,
-        "unresolved_source_assets": unresolved,
+        "unresolved_source_assets": required,
+        "missing_editor_materials": non_visual,
         "export_integrity_passed": valid,
         "ready_for_quake": False,
         "remaining": "Wingman selection, BSP46 conversion, collision, lighting and multiplayer validation",
