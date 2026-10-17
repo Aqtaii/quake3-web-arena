@@ -1,0 +1,78 @@
+name: Check Inferno import tools
+on:
+  push:
+    branches: [codex/inferno-import]
+    paths: ['tools/inferno/**', '.github/workflows/inferno-tools.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Fetch this commit's import tools
+        shell: bash
+        env:
+          COMMIT: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          for file in audit_export.py resolve_assets.py wingman-source.json; do
+            curl --fail --location --proto '=https' --tlsv1.2 \
+              "https://raw.githubusercontent.com/Aqtaii/quake3-web-arena/$COMMIT/tools/inferno/$file" -o "$file"
+          done
+          python3 -m py_compile audit_export.py resolve_assets.py
+      - name: Check binary parsing and corrupted export rejection
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, pathlib, struct, tempfile, zlib
+          import audit_export as audit
+          import resolve_assets as resolver
+          source = json.loads(pathlib.Path("wingman-source.json").read_text())
+          spawns = [e for e in source["entities"] if e["classname"].startswith("info_player_")]
+          assert len(spawns) == 8
+          assert sum(e["classname"] == "info_player_terrorist" for e in spawns) == 4
+          assert sum(e["classname"] == "info_player_counterterrorist" for e in spawns) == 4
+          with tempfile.TemporaryDirectory() as name:
+              root = pathlib.Path(name)
+              payload = b"abDATA"
+              crc = zlib.crc32(payload)
+              entry = struct.pack("<IHHIIH", crc, 2, 0x7fff, 0, 4, 0xffff)
+              tree = b"vmat_c\0materials\0sample\0" + entry + b"ab\0\0\0"
+              header = struct.pack("<7I", 0x55aa1234, 2, len(tree), 4, 0, 0, 0)
+              vpk = root / "test.vpk"
+              vpk.write_bytes(header + tree + b"DATA")
+              entries = resolver.read_index(vpk)
+              parsed = entries["materials/sample.vmat_c"]
+              assert parsed["preload"] == b"ab" and parsed["length"] == 4
+              assert parsed["crc"] == crc
+              data = vpk.read_bytes()
+              assert parsed["preload"] + data[parsed["data_start"]:] == payload
+              vpk.write_bytes(header + tree.replace(entry, entry[:-2] + b"\0\0") + b"DATA")
+              try: resolver.read_index(vpk)
+              except ValueError: pass
+              else: raise AssertionError("Corrupt VPK terminator was accepted")
+              try: resolver.safe_target(root, "../outside")
+              except ValueError: pass
+              else: raise AssertionError("Archive path escaped destination")
+              (root / "mesh.bin").write_bytes(bytes(36))
+              doc = {"asset": {"version": "2.0"}, "buffers": [{"uri": "mesh.bin", "byteLength": 36}],
+                  "bufferViews": [{"buffer": 0, "byteLength": 36}],
+                  "accessors": [{"bufferView": 0, "componentType": 5126, "type": "VEC3", "count": 3}],
+                  "meshes": [{"primitives": [{"attributes": {"POSITION": 0}}]}]}
+              path = root / "mesh.gltf"
+              path.write_text(json.dumps(doc))
+              assert not audit.audit_document(path, root)["errors"]
+              doc["accessors"][0]["count"] = 30
+              path.write_text(json.dumps(doc))
+              assert "Accessor exceeds its buffer view" in audit.audit_document(path, root)["errors"]
+              doc["accessors"][0]["count"] = 3
+              path.write_text(json.dumps(doc))
+              (root / "mesh.bin").write_bytes(bytes(8))
+              assert "Truncated buffer: mesh.bin" in audit.audit_document(path, root)["errors"]
+              try: audit.local_uri(path, "../outside.png", root)
+              except ValueError: pass
+              else: raise AssertionError("Texture path escaped export root")
+          print("PASS: VPK parsing, CRC metadata, corrupt VPK rejection, path containment, accessor bounds, truncated buffer detection and 8 original Wingman spawns")
+          PY
