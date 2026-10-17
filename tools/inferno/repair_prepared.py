@@ -524,28 +524,17 @@ def optimize_textures(baseq3, used_material_names):
             jpg_files.append(path)
 
     if jpg_files:
-        try:
-            from PIL import Image
-            for path in jpg_files:
-                with Image.open(path) as im:
-                    w, h = im.size
-                    tw, th = next_pow2_down(w, 512), next_pow2_down(h, 512)
-                    if (tw, th) != (w, h):
-                        im = im.resize((tw, th), Image.Resampling.BILINEAR)
-                    im.convert("RGB").save(path, format="JPEG", quality=90, optimize=True)
-                kept_files += 1
-                total_bytes += path.stat().st_size
-            print("Resized JPEGs via Pillow", flush=True)
-        except ImportError:
-            print("Pillow not found, resizing JPEGs via ffmpeg...", flush=True)
-            for path in jpg_files:
-                tmp = path.with_suffix(".resized.jpg")
-                subprocess.check_call(
-                    ["ffmpeg", "-y", "-loglevel", "error", "-i", str(path), "-vf", "scale='min(512,iw)':'min(512,ih)'", "-q:v", "4", str(tmp)]
-                )
-                tmp.replace(path)
-                kept_files += 1
-                total_bytes += path.stat().st_size
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmpd:
+            tmp_root = pathlib.Path(tmpd)
+            jobs_json = tmp_root / "jpgs.json"
+            script_mjs = tmp_root / "resize.mjs"
+            jobs_json.write_text(json.dumps([str(p) for p in jpg_files]))
+            script_mjs.write_text("import { readFileSync, writeFileSync, existsSync, mkdtempSync, rmSync } from 'node:fs';\nimport http from 'node:http';\nimport { tmpdir } from 'node:os';\nimport { join, resolve } from 'node:path';\nimport { spawn } from 'node:child_process';\n\nconst files = JSON.parse(readFileSync(process.argv[2], 'utf8'));\nconst completed = new Set();\nconst pending = new Map();\n\nconst page = `<!doctype html><meta charset=\"utf-8\"><script>\nwindow.run = async () => {\n  const count = ${files.length};\n  const canvas = new OffscreenCanvas(1, 1);\n  const ctx = canvas.getContext('2d');\n  for (let id = 0; id < count; id++) {\n    const blob = await (await fetch('/in?id=' + id)).blob();\n    const bmp = await createImageBitmap(blob);\n    let tw = 1, th = 1;\n    while (tw * 2 <= bmp.width && tw * 2 <= 512) tw *= 2;\n    while (th * 2 <= bmp.height && th * 2 <= 512) th *= 2;\n    canvas.width = tw;\n    canvas.height = th;\n    ctx.drawImage(bmp, 0, 0, tw, th);\n    bmp.close();\n    const out = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.88 });\n    const res = await fetch('/out?id=' + id, { method: 'POST', body: out });\n    if (!res.ok) throw Error(await res.text());\n  }\n  return { resized: count };\n};\n</script>`;\n\nconst server = http.createServer(async (req, res) => {\n  try {\n    const url = new URL(req.url, 'http://localhost');\n    if (req.method === 'GET' && url.pathname === '/') {\n      res.setHeader('Content-Type', 'text/html');\n      res.end(page);\n      return;\n    }\n    if (req.method === 'GET' && url.pathname === '/in') {\n      const id = Number(url.searchParams.get('id'));\n      res.setHeader('Content-Type', 'image/jpeg');\n      res.end(readFileSync(files[id]));\n      return;\n    }\n    if (req.method === 'POST' && url.pathname === '/out') {\n      const id = Number(url.searchParams.get('id'));\n      const chunks = [];\n      for await (const c of req) chunks.push(c);\n      const data = Buffer.concat(chunks);\n      writeFileSync(files[id], data);\n      completed.add(id);\n      res.end('ok');\n      return;\n    }\n    res.writeHead(404);\n    res.end();\n  } catch (e) {\n    res.writeHead(400);\n    res.end(e.message);\n  }\n});\n\nawait new Promise(ok => server.listen(0, '127.0.0.1', ok));\nconst chromeDir = mkdtempSync(join(tmpdir(), 'inferno-resize-'));\nconst chrome = spawn(process.env.CHROME_BIN || 'google-chrome', [\n  '--headless=new', '--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu',\n  '--no-first-run', '--no-default-browser-check', '--remote-debugging-address=127.0.0.1',\n  '--remote-debugging-port=0', '--user-data-dir=' + chromeDir, 'about:blank'\n], { stdio: ['ignore', 'ignore', 'pipe'] });\nchrome.stderr.on('data', () => {});\nlet socket, sequence = 0;\nconst delay = ms => new Promise(r => setTimeout(r, ms));\ntry {\n  const active = join(chromeDir, 'DevToolsActivePort');\n  for (let i = 0; i < 200 && !existsSync(active); i++) await delay(100);\n  const [port, wsPath] = readFileSync(active, 'utf8').trim().split('\\n');\n  socket = new WebSocket('ws://127.0.0.1:' + port + wsPath);\n  await new Promise((ok, no) => { socket.addEventListener('open', ok, { once: true }); socket.addEventListener('error', no, { once: true }); });\n  socket.addEventListener('message', ev => {\n    const msg = JSON.parse(ev.data), item = pending.get(msg.id);\n    if (item) { pending.delete(msg.id); msg.error ? item.reject(Error(JSON.stringify(msg.error))) : item.resolve(msg.result); }\n  });\n  const call = (method, params = {}, sessionId) => new Promise((res, rej) => {\n    const id = ++sequence; pending.set(id, { resolve: res, reject: rej });\n    socket.send(JSON.stringify({ id, method, params, ...(sessionId ? { sessionId } : {}) }));\n  });\n  const target = await call('Target.createTarget', { url: 'http://127.0.0.1:' + server.address().port });\n  const attached = await call('Target.attachToTarget', { targetId: target.targetId, flatten: true });\n  const session = attached.sessionId;\n  for (let i = 0; i < 100; i++) {\n    const r = await call('Runtime.evaluate', { expression: 'typeof window.run===\"function\"', returnByValue: true }, session);\n    if (r.result?.value) break;\n    await delay(100);\n  }\n  const res = await call('Runtime.evaluate', { expression: 'window.run()', awaitPromise: true, returnByValue: true }, session);\n  if (res.exceptionDetails) throw Error(JSON.stringify(res.exceptionDetails));\n  console.log(res.result.value);\n} finally {\n  socket?.close();\n  if (chrome.exitCode === null) chrome.kill('SIGKILL');\n  server.close();\n  try { rmSync(chromeDir, { recursive: true, force: true }); } catch {}\n}\n")
+            subprocess.check_call(["node", str(script_mjs), str(jobs_json)])
+        for path in jpg_files:
+            kept_files += 1
+            total_bytes += path.stat().st_size
 
     print(f"Optimized textures: kept {kept_files}, removed {removed_files} unused, total size = {total_bytes / (1024*1024):.2f} MB", flush=True)
 
