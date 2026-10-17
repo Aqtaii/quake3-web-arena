@@ -89,7 +89,7 @@ jobs:
             -i cs2/game/csgo/maps/de_inferno.vpk \
             --vpk_filepath maps/de_inferno.vmap_c \
             --game cs2/game/csgo/gameinfo.gi \
-            --gltf_export_format gltf --gltf_export_materials --gltf_export_extras \
+            -d --gltf_export_format gltf --gltf_export_materials --gltf_export_extras \
             -o exported/ > reports/export.log 2>&1
           result=$?
           set -e
