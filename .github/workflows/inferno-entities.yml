@@ -85,6 +85,10 @@ jobs:
             --vpk_extensions vents_c -d -o reports/entities/ > reports/entities.log 2>&1
           tools/viewer/Source2Viewer-CLI -i cs2/game/csgo/maps/de_inferno.vpk --vpk_extensions nav --vpk_list
           tools/viewer/Source2Viewer-CLI -i cs2/game/csgo/maps/de_inferno.vpk --vpk_extensions nav -o reports/nav/
+          curl --fail --location --proto '=https' --tlsv1.2 \
+            https://raw.githubusercontent.com/Aqtaii/quake3-web-arena/9caa315e79655ca2240be846c05dce229f038e62/tools/inferno/nav_areas.py \
+            -o tools/nav_areas.py
+          python3 tools/nav_areas.py reports/nav/maps/de_inferno.nav reports/navigation-areas.json
           python3 - <<'PY'
           import pathlib, struct
           for root in [pathlib.Path("reports/nav"), pathlib.Path("cs2/game/csgo/maps")]:
