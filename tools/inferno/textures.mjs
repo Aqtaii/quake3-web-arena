@@ -29,7 +29,7 @@ window.run=async()=>{
     }else{context.fillStyle='#fff';context.fillRect(0,0,1,1);}
     const {width:w,height:h}=canvas;
     if(w>16384||h>16384)throw Error('Texture dimensions exceed limit');
-    const pixels=context.getImageData(0,0,w,h).data;
+    const image=context.getImageData(0,0,w,h),pixels=image.data;
     const bytes=new Uint8Array(18+w*h*4),view=new DataView(bytes.buffer);
     bytes[2]=2;view.setUint16(12,w,true);view.setUint16(14,h,true);bytes[16]=32;bytes[17]=40;
     const factor=job.factor||[1,1,1,1];
@@ -45,7 +45,15 @@ window.run=async()=>{
       bytes[21+p]=job.alphaMode==='MASK'?(alpha>=255*(job.alphaCutoff??.5)?255:0):
         job.alphaMode==='BLEND'?Math.round(alpha):255;
     }
-    const response=await fetch('/output?id='+id,{method:'POST',body:bytes});
+    let body=bytes;
+    if(job.output.endsWith('.jpg')){
+      for(let p=0;p<pixels.length;p+=4){
+        pixels[p]=bytes[20+p];pixels[p+1]=bytes[19+p];pixels[p+2]=bytes[18+p];pixels[p+3]=255;
+      }
+      context.putImageData(image,0,0);
+      body=await canvas.convertToBlob({type:'image/jpeg',quality:.98});
+    }
+    const response=await fetch('/output?id='+id,{method:'POST',body});
     if(!response.ok)throw Error(await response.text());
     canvas.width=1;canvas.height=1;
   }
@@ -68,9 +76,13 @@ const server=http.createServer(async(req,res)=>{
             const chunks=[];let size=0;
             for await(const chunk of req){size+=chunk.length;if(size>256*1024*1024)throw Error('Texture too large');chunks.push(chunk);}
             const data=Buffer.concat(chunks);
-            if(data.length<18||data[2]!==2||data[16]!==32)throw Error('Invalid TGA output');
-            const expected=18+data.readUInt16LE(12)*data.readUInt16LE(14)*4;
-            if(data.length!==expected)throw Error('Incomplete TGA output');
+            if(jobs[id].output.endsWith('.jpg')){
+                if(data.length<4||data[0]!==255||data[1]!==216||data.at(-2)!==255||data.at(-1)!==217)throw Error('Invalid JPEG output');
+            }else{
+                if(data.length<18||data[2]!==2||data[16]!==32)throw Error('Invalid TGA output');
+                const expected=18+data.readUInt16LE(12)*data.readUInt16LE(14)*4;
+                if(data.length!==expected)throw Error('Incomplete TGA output');
+            }
             const target=contained(outputRoot,jobs[id].output);
             mkdirSync(resolve(target,'..'),{recursive:true});writeFileSync(target,data);completed.add(id);
             if(completed.size%50===0||completed.size===jobs.length)console.log('Textures converted',completed.size,'/',jobs.length);
