@@ -132,8 +132,7 @@ jobs:
           manifest["packages"] = base_packs + pack_names
           manifest["serverPackages"] = base_packs + ["inferno-map.pk3"]
           manifest["maps"] = ["q3dm1", "q3dm7", "q3dm17", "q3tourney2", "inferno_wingman"]
-          manifest_path.write_text(json.dumps(manifest, indent=2) + "
-")
+          manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
           print("Updated test manifest:", json.dumps(manifest, indent=2))
           PY
           node tools/inferno/playtest.mjs . inferno_wingman reports
