@@ -39,7 +39,12 @@ jobs:
                       raise SystemExit("No supported SquashFS filesystem found")
           PY
           if [ -f tools/compiler.squashfs ]; then
-            "$extractor" x -y -otools/compiler/image tools/compiler.squashfs >> reports/extract.log
+            if command -v unsquashfs >/dev/null; then
+              unsquashfs -d tools/compiler/image tools/compiler.squashfs >> reports/extract.log
+            else
+              echo "Cloud runner has no compatible SquashFS extractor."
+              exit 1
+            fi
           fi
           find tools/compiler -type f -name '*q3map2*'
           compiler=$(find tools/compiler -type f \( -name q3map2 -o -name q3map2.x86_64 \) | head -n 1)
