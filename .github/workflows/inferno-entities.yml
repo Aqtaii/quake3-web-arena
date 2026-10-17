@@ -92,14 +92,21 @@ jobs:
               text = path.read_text(encoding="utf-8", errors="replace")
               print("ENTITY FILE", str(path), "BYTES", path.stat().st_size)
               print("FORMAT SAMPLE", text[:2000])
-              lines = text.splitlines()
-              matches = []
-              for i, line in enumerate(lines):
-                  if re.search(r"wingman|scrim|bombsite|spawn|buyzone", line, re.I):
-                      matches.append({"line": i + 1, "context": "\n".join(lines[max(0,i-3):i+9])})
-              records.append({"path": str(path), "matches": matches})
+              selected = []
+              for block in re.split(r"(?m)^====\\d+====\\s*$", text):
+                  if re.search(r"2v2|wingman|scrim", block, re.I):
+                      fields = {}
+                      for line in block.splitlines():
+                          match = re.match(r"^(\\w+)\\s+(.+)$", line)
+                          if match:
+                              key, value = match.groups()
+                              try: value = json.loads(value)
+                              except (ValueError, TypeError): pass
+                              fields[key] = value
+                      selected.append({"fields": fields, "raw": block.strip()})
+              records.append({"path": str(path), "wingman_entities": selected})
           pathlib.Path("reports/gameplay-entities.json").write_text(json.dumps(records, indent=2) + "\n")
-          print(json.dumps(records, indent=2)[:50000])
+          print(json.dumps(records, indent=2)[:120000])
           PY
       - name: Preserve original entity diagnostics
         if: always()
