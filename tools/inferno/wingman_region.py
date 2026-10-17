@@ -126,7 +126,7 @@ def select_region(nav, source, folder):
             print("SPAWN_NAV_DIAGNOSTICS",json.dumps({"spawn":p,"nearest":[
                 {"id":a["id"],"distance":distance(a),"bounds":bounds(a["corners"])}
                 for a in nearby[:3]]}))
-            if not nearby or distance(nearby[0])[0]>64 or distance(nearby[0])[1]>128:
+            if not nearby or distance(nearby[0])[0]>128 or distance(nearby[0])[1]>128:
                 raise ValueError("Original spawn is too far from unblocked navigation: "+str(p))
             candidates=[nearby[0]]
         selected=min(candidates,key=lambda a:abs(sum(c[2] for c in a["corners"])/len(a["corners"])-p[2]))
