@@ -477,8 +477,9 @@ def make_brush(lo, hi, shader):
         [(x, y, z), (X, y, z), (x, Y, z)],
         [(x, y, Z), (x, Y, Z), (X, y, Z)],
     ]
+    detail_bit = 0 if "sky" in shader else 134217728
     return "{\n" + "\n".join(
-        " ".join("( %.5f %.5f %.5f )" % p for p in face) + f" {shader} 0 0 0 1 1 134217728 0 0"
+        " ".join("( %.5f %.5f %.5f )" % p for p in face) + f" {shader} 0 0 0 1 1 {detail_bit} 0 0"
         for face in faces
     ) + "\n}\n"
 
@@ -760,10 +761,13 @@ def repair_map_and_shaders(baseq3, floor_src_tris, wall_src_tris):
         m = re.search(r'"light" "([^"]+)"', txt)
         return float(m.group(1)) if m else 0.0
     lights_sorted = sorted(lights, key=light_val, reverse=True)
-    keep_lights = set(lights_sorted[:8])
+    keep_lights = set(lights_sorted[:12])
     for l_txt in lights:
         if l_txt not in keep_lights:
             map_text = map_text.replace(l_txt, "", 1)
+
+    for sx, sy, sz, val in ((650, 520, 460, 850), (1350, 350, 460, 850), (1950, 450, 500, 850), (2300, 640, 500, 850)):
+        map_text += f'{{\n"classname" "light"\n"origin" "{sx} {sy} {sz}"\n"_color" "1.0 0.93 0.84"\n"light" "{val}"\n}}\n'
 
     map_path.write_text(map_text)
 
@@ -780,9 +784,12 @@ def repair_map_and_shaders(baseq3, floor_src_tris, wall_src_tris):
             block_mod = block_mod.replace("sort banner\n{", "polygonOffset\nsort banner\n{")
         if shader_name in ("textures/inferno/physics_solid", "textures/inferno/physics_playerclip"):
             if "surfaceparm detail" not in block_mod:
-                block_mod = block_mod.replace("surfaceparm nodraw", "surfaceparm nodraw\nsurfaceparm detail")
+                block_mod = block_mod.replace(
+                    "surfaceparm nodraw",
+                    "surfaceparm nodraw\nsurfaceparm nolightmap\nsurfaceparm nomarks\nsurfaceparm detail\nsurfaceparm trans\nsurfaceparm playerclip"
+                )
         if shader_name == "textures/inferno/sky":
-            block_mod = re.sub(r"(q3map_sunExt\s+\S+\s+\S+\s+\S+\s+)\S+(\s+\S+\s+\S+\s+)\S+\s+\S+", r"\g<1>140\g<2>0 1", block_mod)
+            block_mod = re.sub(r"q3map_sunExt[^\n]+\n", "", block_mod)
         new_blocks.append(block_mod)
     shader_path.write_text("\n\n".join(new_blocks) + "\n")
 
