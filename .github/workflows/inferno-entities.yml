@@ -25,7 +25,7 @@ jobs:
           sha256sum tools/downloader.zip > reports/tool-sha256.txt
           unzip -q tools/downloader.zip -d tools/downloader
           chmod +x tools/downloader/DepotDownloader
-          printf '%s\n' 'game/csgo/maps/de_inferno.vpk' 'game/csgo/gameinfo.gi' > files.txt
+          printf '%s\n' 'game/csgo/maps/de_inferno.vpk' 'game/csgo/gameinfo.gi' 'game/csgo/maps/de_inferno.nav' > files.txt
       - name: Request only Inferno from official Steam depot
         shell: bash
         run: |
@@ -83,6 +83,15 @@ jobs:
           chmod +x tools/viewer/Source2Viewer-CLI
           tools/viewer/Source2Viewer-CLI -i cs2/game/csgo/maps/de_inferno.vpk \
             --vpk_extensions vents_c -d -o reports/entities/ > reports/entities.log 2>&1
+          tools/viewer/Source2Viewer-CLI -i cs2/game/csgo/maps/de_inferno.vpk --vpk_extensions nav --vpk_list
+          tools/viewer/Source2Viewer-CLI -i cs2/game/csgo/maps/de_inferno.vpk --vpk_extensions nav -o reports/nav/
+          python3 - <<'PY'
+          import pathlib, struct
+          for root in [pathlib.Path("reports/nav"), pathlib.Path("cs2/game/csgo/maps")]:
+              for path in root.rglob("*.nav"):
+                  data = path.read_bytes()
+                  print("NAVIGATION", path, len(data), struct.unpack_from("<4I", data))
+          PY
           python3 - <<'PY'
           import pathlib, re, json
           records = []
