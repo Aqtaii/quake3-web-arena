@@ -46,7 +46,7 @@ export async function createEngine(root, send, map = 'q3dm1') {
     }
     exports=(await WebAssembly.instantiate(module,{env})).exports; memory=exports.memory;
     function command(text, init=false) { const data=new TextEncoder().encode(text+'\0'), p=exports.wasm_q3_alloc(data.length); bytes(p,data.length).set(data); try { (init?exports.wasm_q3_init:exports.wasm_q3_console_command)(p); } finally { exports.wasm_q3_free(p); } }
-    command('+set com_hunkMegs 96 +set dedicated 1 +set sv_pure 0 +set vm_game 0 +set vm_cgame 0 +set vm_ui 0 +set sv_maxclients 8 +set sv_hostname WebArena +set g_gametype 0 +set rconPassword "" +set sv_floodProtect 1 +set sv_timeout 20 +set sv_zombietime 2 +set sv_allowDownload 0 +map '+map,true);
+    command('+set com_hunkMegs 160 +set dedicated 1 +set sv_pure 0 +set vm_game 0 +set vm_cgame 0 +set vm_ui 0 +set sv_maxclients 8 +set sv_hostname WebArena +set g_gametype 0 +set rconPassword "" +set sv_floodProtect 1 +set sv_timeout 20 +set sv_zombietime 2 +set sv_allowDownload 0 +map '+map,true);
     return {
         packet(peer,data) { if(queue.length<1024 && data.length<=16384) queue.push({peer,data}); },
         disconnect(peer) { for(let i=queue.length-1;i>=0;i--)if(queue[i].peer===peer)queue.splice(i,1);exports.wasm_q3_drop_peer(peer); },
