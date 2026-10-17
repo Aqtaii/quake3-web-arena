@@ -12,7 +12,7 @@ concurrency:
 jobs:
   probe:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 45
     steps:
       - name: Download pinned SteamRE downloader
         shell: bash
@@ -118,6 +118,56 @@ jobs:
             echo "::error::Source 2 export failed; see export.log for missing dependencies or format errors."
             exit "$result"
           fi
+      - name: Resolve shared official assets and audit export
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p importer indexes
+          for script in audit_export.py resolve_assets.py; do
+            curl --fail --location --retry 3 --proto '=https' --tlsv1.2 \
+              "https://raw.githubusercontent.com/Aqtaii/quake3-web-arena/fbe7e415a25b1d06448782fbe6d6cc98dbc32154/tools/inferno/$script" \
+              -o "importer/$script"
+          done
+          python3 -m py_compile importer/*.py
+          printf '%s\n' 'game/csgo/pak01_dir.vpk' 'game/core/pak01_dir.vpk' > index-files.txt
+          timeout 300 tools/downloader/DepotDownloader \
+            -app 730 -depot 2347770 -filelist index-files.txt -dir indexes \
+            -validate -max-downloads 4 > reports/index-download.log 2>&1
+          for pass in 1 2 3 4; do
+            cp reports/export.log "reports/export-pass-$pass.log"
+            python3 importer/resolve_assets.py \
+              --log "reports/export-pass-$pass.log" --indexes indexes --game cs2/game \
+              --downloader tools/downloader/DepotDownloader \
+              --report "reports/dependencies-$pass.json" --max-chunks 100 \
+              > "reports/dependencies-$pass.log" 2>&1 || {
+                tail -n 60 "reports/dependencies-$pass.log"
+                exit 1
+              }
+            tail -n 30 "reports/dependencies-$pass.log"
+            timeout 600 tools/viewer/Source2Viewer-CLI \
+              -i cs2/game/csgo/maps/de_inferno.vpk \
+              --vpk_filepath maps/de_inferno.vmap_c \
+              --game cs2/game/csgo/gameinfo.gi \
+              -d --gltf_export_format gltf --gltf_export_materials --gltf_export_extras \
+              -o exported/ > reports/export.log 2>&1 || {
+                tail -n 60 reports/export.log
+                exit 1
+              }
+            if python3 importer/audit_export.py exported reports/export-audit.json reports/export.log \
+                > reports/audit.log 2>&1; then
+              cat reports/audit.log
+              break
+            fi
+          done
+          cat reports/audit.log
+          python3 - <<'PY'
+          import json, pathlib, os
+          report = json.loads(pathlib.Path("reports/export-audit.json").read_text())
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
+              f.write("\n## Final asset audit\n\n```json\n" + json.dumps(report, indent=2) + "\n```\n")
+          if not report["export_integrity_passed"]:
+              raise SystemExit("Incomplete export: missing assets or invalid geometry remain. See reports.")
+          PY
       - name: Preserve diagnostic reports only
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
