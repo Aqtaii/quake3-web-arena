@@ -60,6 +60,64 @@ jobs:
           command -v magick || command -v convert || true
           command -v google-chrome || command -v chromium || true
           printf '%s\n' "$compiler" > reports/compiler-path.txt
+      - name: Verify native glTF import and original-unit coordinate conversion
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import base64, json, pathlib, struct
+          root=pathlib.Path("compiler-fixture/baseq3")
+          (root/"maps").mkdir(parents=True)
+          (root/"models").mkdir()
+          (root/"scripts").mkdir()
+          points=[(0,0,0),(64,0,0),(0,64,0)]
+          vertices=b"".join(struct.pack("<3f",y*.0254,z*.0254,x*.0254) for x,y,z in points)
+          (root/"models/basis.bin").write_bytes(vertices)
+          gltf={"asset":{"version":"2.0"},"scene":0,"scenes":[{"nodes":[0]}],
+            "nodes":[{"mesh":0}],"meshes":[{"primitives":[{"attributes":{"POSITION":0},"material":0}]}],
+            "materials":[{"name":"textures/fixture"}],
+            "buffers":[{"uri":"basis.bin","byteLength":len(vertices)}],
+            "bufferViews":[{"buffer":0,"byteLength":len(vertices)}],
+            "accessors":[{"bufferView":0,"componentType":5126,"type":"VEC3","count":3,
+                          "min":[0,0,0],"max":[64*.0254,0,64*.0254]}]}
+          (root/"models/basis.gltf").write_text(json.dumps(gltf))
+          (root/"scripts/shaderlist.txt").write_text("fixture\n")
+          (root/"scripts/fixture.shader").write_text(
+            "textures/fixture\n{\n{ map $whiteimage\nrgbGen vertex\n}\n}\n"
+            "textures/fixture_nodraw\n{\nsurfaceparm nodraw\n}\n")
+          def brush(lo,hi):
+              x,y,z=lo;X,Y,Z=hi
+              faces=[[(x,y,z),(x,Y,z),(x,y,Z)],[(X,y,z),(X,y,Z),(X,Y,z)],
+                     [(x,y,z),(x,y,Z),(X,y,z)],[(x,Y,z),(X,Y,z),(x,Y,Z)],
+                     [(x,y,z),(X,y,z),(x,Y,z)],[(x,y,Z),(x,Y,Z),(X,y,Z)]]
+              return "{\n"+"\n".join(" ".join("( %g %g %g )"%p for p in face)+
+                " textures/fixture_nodraw 0 0 0 1 1 0 0 0" for face in faces)+"\n}\n"
+          boxes=[((-144,-144,-80),(-128,144,144)),((128,-144,-80),(144,144,144)),
+                 ((-128,-144,-80),(128,-128,144)),((-128,128,-80),(128,144,144)),
+                 ((-128,-128,-80),(128,128,-64)),((-128,-128,128),(128,128,144))]
+          text='{\n"classname" "worldspawn"\n'+''.join(brush(*b) for b in boxes)+'}\n'
+          text+='{\n"classname" "misc_model"\n"model" "models/basis.gltf"\n"angles" "0 90 0"\n"modelscale" "39.37007874015748"\n"spawnflags" "2"\n}\n'
+          text+='{\n"classname" "info_player_deathmatch"\n"origin" "-32 -32 32"\n}\n'
+          (root/"maps/basis.map").write_text(text)
+          PY
+          compiler=$(cat reports/compiler-path.txt)
+          "$compiler" -game quake3 -fs_basepath "$PWD/compiler-fixture" -meta \
+            "$PWD/compiler-fixture/baseq3/maps/basis.map" > reports/compiler-gltf.log 2>&1 || {
+              tail -n 100 reports/compiler-gltf.log
+              exit 1
+            }
+          python3 - <<'PY'
+          import json, pathlib, struct
+          data=pathlib.Path("compiler-fixture/baseq3/maps/basis.bsp").read_bytes()
+          assert data[:4]==b"IBSP" and struct.unpack_from("<I",data,4)[0]==46
+          start,length=struct.unpack_from("<II",data,8+10*8)
+          assert length%44==0
+          vertices=[struct.unpack_from("<3f",data,start+i) for i in range(0,length,44)]
+          for expected in [(0,0,0),(64,0,0),(0,64,0)]:
+              assert any(max(abs(a-b) for a,b in zip(actual,expected))<.01 for actual in vertices), (expected,vertices[:20])
+          report={"native_gltf_import":True,"bsp_version":46,"source_units_and_axes_preserved":True}
+          pathlib.Path("reports/gltf-compiler.json").write_text(json.dumps(report,indent=2)+"\n")
+          print("PASS",json.dumps(report))
+          PY
       - name: Preserve compiler diagnostics
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
