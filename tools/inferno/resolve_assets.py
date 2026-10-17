@@ -81,12 +81,15 @@ def main():
     parser.add_argument("--downloader", required=True)
     parser.add_argument("--report", type=pathlib.Path, required=True)
     parser.add_argument("--max-chunks", type=int, default=100)
+    parser.add_argument("--manifest", default="2520908610273941189")
     args = parser.parse_args()
     text = args.log.read_text(encoding="utf-8", errors="replace")
     missing = sorted(set(re.findall(r'Failed to load "([^"]+)"', text)))
     packages = []
     for index in sorted(args.indexes.glob("game/*/pak01_dir.vpk")):
         packages.append((index, read_index(index)))
+    if not packages:
+        raise SystemExit("No official package indexes were downloaded")
     groups = collections.defaultdict(list)
     unknown = []
     for asset in missing:
@@ -114,7 +117,7 @@ def main():
             filelist.parent.mkdir(parents=True, exist_ok=True)
             filelist.write_text(relative_chunk.as_posix() + "\n")
             command = [
-                args.downloader, "-app", "730", "-depot", "2347770",
+                args.downloader, "-app", "730", "-depot", "2347770", "-manifest", args.manifest,
                 "-filelist", str(filelist), "-dir", str(args.indexes),
                 "-validate", "-max-downloads", "4",
             ]
@@ -127,7 +130,8 @@ def main():
                 offset = entry["offset"] + (entry["data_start"] if archive == 0x7FFF else 0)
                 stream.seek(offset)
                 remaining = entry["length"]
-                with target.open("wb") as output:
+                temporary = target.with_name(target.name + ".partial")
+                with temporary.open("wb") as output:
                     output.write(entry["preload"])
                     while remaining:
                         block = stream.read(min(1024 * 1024, remaining))
@@ -138,12 +142,13 @@ def main():
                 # VPK stores CRC32 over preload and archive data.
                 import zlib
                 crc = 0
-                with target.open("rb") as check:
+                with temporary.open("rb") as check:
                     for block in iter(lambda: check.read(1024 * 1024), b""):
                         crc = zlib.crc32(block, crc)
                 if (crc & 0xFFFFFFFF) != entry["crc"]:
-                    target.unlink()
+                    temporary.unlink()
                     raise ValueError("VPK CRC mismatch: " + asset)
+                temporary.replace(target)
                 extracted.append({"asset": asset, "folder": game_folder, "bytes": target.stat().st_size,
                                   "crc32": format(crc & 0xFFFFFFFF, "08x")})
         if archive != 0x7FFF:
