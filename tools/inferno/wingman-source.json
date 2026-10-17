@@ -1,0 +1,1090 @@
+{
+  "source": {
+    "app": 730,
+    "depot": 2347770,
+    "manifest": "2520908610273941189",
+    "map": "game/csgo/maps/de_inferno.vpk",
+    "entity_lump": "maps/de_inferno/entities/default_ents.vents",
+    "verification_run": "https://github.com/Aqtaii/quake3-web-arena/actions/runs/39026746105"
+  },
+  "coordinate_system": "Original Source 2 coordinates, Z up, inches; no conversion applied",
+  "status": "Source metadata only. Not a playable Quake BSP.",
+  "notes": [
+    "CS2 marks the 2v2 spawn/prop set disabled by default; Wingman rules activate it.",
+    "func_nav_blocker affects bot navigation and must not be treated as a physical wall.",
+    "Boundary props require their original render and physics assets; no guessed rectangular crop has been applied."
+  ],
+  "entities": [
+    {
+      "classname": "func_nav_blocker",
+      "targetname": "[PR#]navblocker.2v2",
+      "origin": [
+        675,
+        -128,
+        308
+      ],
+      "angles": [
+        0,
+        0,
+        0
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "model": "resource_name:\"maps/de_inferno/entities/navblocker_2v2_229.vmdl\"",
+      "hammeruniqueid": "229",
+      "startdisabled": false
+    },
+    {
+      "classname": "func_nav_blocker",
+      "targetname": "[PR#]navblocker.2v2",
+      "origin": [
+        123,
+        0,
+        0
+      ],
+      "angles": [
+        0,
+        0,
+        0
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "model": "resource_name:\"maps/de_inferno/entities/navblocker_2v2_233.vmdl\"",
+      "hammeruniqueid": "233",
+      "startdisabled": false
+    },
+    {
+      "classname": "info_player_terrorist",
+      "targetname": "[PR#]spawnpoints.2v2",
+      "origin": [
+        591.698975,
+        545,
+        128
+      ],
+      "angles": [
+        0,
+        0,
+        0
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "hammeruniqueid": "249",
+      "enabled": false
+    },
+    {
+      "classname": "func_buyzone",
+      "targetname": "[PR#]buyzone.2v2",
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "angles": [
+        0,
+        0,
+        0
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "model": "resource_name:\"maps/de_inferno/entities/buyzone_2v2_250.vmdl\"",
+      "hammeruniqueid": "250"
+    },
+    {
+      "classname": "info_player_counterterrorist",
+      "targetname": "[PR#]spawnpoints.2v2",
+      "origin": [
+        2272,
+        608,
+        160
+      ],
+      "angles": [
+        0,
+        180.000015,
+        0
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "hammeruniqueid": "252",
+      "enabled": false
+    },
+    {
+      "classname": "info_player_counterterrorist",
+      "targetname": "[PR#]spawnpoints.2v2",
+      "origin": [
+        2272,
+        672,
+        160
+      ],
+      "angles": [
+        0,
+        180.000015,
+        0
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "hammeruniqueid": "253",
+      "enabled": false
+    },
+    {
+      "classname": "info_player_counterterrorist",
+      "targetname": "[PR#]spawnpoints.2v2",
+      "origin": [
+        2336,
+        672,
+        160
+      ],
+      "angles": [
+        0,
+        180.000015,
+        0
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "hammeruniqueid": "254",
+      "enabled": false
+    },
+    {
+      "classname": "info_player_counterterrorist",
+      "targetname": "[PR#]spawnpoints.2v2",
+      "origin": [
+        2336,
+        608,
+        160
+      ],
+      "angles": [
+        0,
+        180.000015,
+        0
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "hammeruniqueid": "255",
+      "enabled": false
+    },
+    {
+      "classname": "func_buyzone",
+      "targetname": "[PR#]buyzone.2v2",
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "angles": [
+        0,
+        0,
+        0
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "model": "resource_name:\"maps/de_inferno/entities/buyzone_2v2_256.vmdl\"",
+      "hammeruniqueid": "256"
+    },
+    {
+      "classname": "info_player_terrorist",
+      "targetname": "[PR#]spawnpoints.2v2",
+      "origin": [
+        508.699005,
+        544,
+        128
+      ],
+      "angles": [
+        0,
+        0,
+        0
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "hammeruniqueid": "258",
+      "enabled": false
+    },
+    {
+      "classname": "info_player_terrorist",
+      "targetname": "[PR#]spawnpoints.2v2",
+      "origin": [
+        509,
+        605,
+        128
+      ],
+      "angles": [
+        0,
+        0,
+        0
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "hammeruniqueid": "259",
+      "enabled": false
+    },
+    {
+      "classname": "info_player_terrorist",
+      "targetname": "[PR#]spawnpoints.2v2",
+      "origin": [
+        592,
+        606,
+        128
+      ],
+      "angles": [
+        0,
+        0,
+        0
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "hammeruniqueid": "260",
+      "enabled": false
+    },
+    {
+      "classname": "func_nav_blocker",
+      "targetname": "[PR#]navblocker.2v2",
+      "origin": [
+        2338,
+        1556,
+        217.5
+      ],
+      "angles": [
+        0,
+        0,
+        0
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "model": "resource_name:\"maps/de_inferno/entities/navblocker_2v2_263.vmdl\"",
+      "hammeruniqueid": "263",
+      "startdisabled": false
+    },
+    {
+      "classname": "func_nav_blocker",
+      "targetname": "[PR#]navblocker.2v2",
+      "origin": [
+        457,
+        592,
+        326
+      ],
+      "angles": [
+        0,
+        0,
+        0
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "model": "resource_name:\"maps/de_inferno/entities/navblocker_2v2_265.vmdl\"",
+      "hammeruniqueid": "265",
+      "startdisabled": false
+    },
+    {
+      "classname": "func_nav_blocker",
+      "targetname": "[PR#]navblocker.2v2",
+      "origin": [
+        1851,
+        1507,
+        217.5
+      ],
+      "angles": [
+        0,
+        0,
+        0
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "model": "resource_name:\"maps/de_inferno/entities/navblocker_2v2_13783.vmdl\"",
+      "hammeruniqueid": "13783",
+      "startdisabled": false
+    },
+    {
+      "classname": "prop_dynamic",
+      "targetname": "[PR#]props.2v2",
+      "origin": [
+        656,
+        -56.000004,
+        73.999985
+      ],
+      "angles": [
+        2.811975,
+        162.399216,
+        -1.217915
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "model": "resource_name:\"models/cs_italy/italy_barricade/italy_barricade.vmdl\"",
+      "hammeruniqueid": "13740",
+      "startdisabled": true,
+      "solid": "6"
+    },
+    {
+      "classname": "prop_dynamic",
+      "targetname": "[PR#]props.2v2",
+      "origin": [
+        656,
+        -193,
+        80
+      ],
+      "angles": [
+        2.05869,
+        187.092773,
+        6.400981
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "model": "resource_name:\"models/cs_italy/italy_barricade/italy_barricade.vmdl\"",
+      "hammeruniqueid": "13741",
+      "startdisabled": true,
+      "solid": "6"
+    },
+    {
+      "classname": "prop_dynamic",
+      "targetname": "[PR#]props.2v2",
+      "origin": [
+        434,
+        524,
+        88
+      ],
+      "angles": [
+        -3.059607,
+        6.460335,
+        -3.850483
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "model": "resource_name:\"models/cs_italy/italy_barricade/italy_barricade.vmdl\"",
+      "hammeruniqueid": "13742",
+      "startdisabled": true,
+      "solid": "6"
+    },
+    {
+      "classname": "prop_dynamic",
+      "targetname": "[PR#]props.2v2",
+      "origin": [
+        442,
+        606,
+        88
+      ],
+      "angles": [
+        0.342478,
+        354.098053,
+        3.309284
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "model": "resource_name:\"models/cs_italy/italy_barricade/italy_barricade.vmdl\"",
+      "hammeruniqueid": "13743",
+      "startdisabled": true,
+      "solid": "6"
+    },
+    {
+      "classname": "prop_dynamic",
+      "targetname": "[PR#]props.2v2",
+      "origin": [
+        391.75412,
+        570.289673,
+        82.578613
+      ],
+      "angles": [
+        1.00807,
+        191.624802,
+        2.261781
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "model": "resource_name:\"models/de_inferno/wood_pallet_01/inferno_pallet_wood_01.vmdl\"",
+      "hammeruniqueid": "13749",
+      "startdisabled": true,
+      "solid": "6"
+    },
+    {
+      "classname": "prop_dynamic",
+      "targetname": "[PR#]props.2v2",
+      "origin": [
+        400.037872,
+        565.754517,
+        128.121902
+      ],
+      "angles": [
+        1.930829,
+        293.675049,
+        -6.244729
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "model": "resource_name:\"models/generic/concrete_bag_kit_01/concrete_bag_01_b.vmdl\"",
+      "hammeruniqueid": "13745",
+      "startdisabled": true,
+      "solid": "6"
+    },
+    {
+      "classname": "prop_dynamic",
+      "targetname": "[PR#]props.2v2",
+      "origin": [
+        392.387756,
+        571.672668,
+        88.317657
+      ],
+      "angles": [
+        -2.261429,
+        281.5849,
+        1.008858
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "model": "resource_name:\"models/generic/concrete_bag_kit_01/concrete_bag_01_stack_a.vmdl\"",
+      "hammeruniqueid": "13748",
+      "startdisabled": true,
+      "solid": "6"
+    },
+    {
+      "classname": "prop_dynamic",
+      "targetname": "[PR#]props.2v2",
+      "origin": [
+        385.748474,
+        556.760681,
+        117.078644
+      ],
+      "angles": [
+        -0.262562,
+        281.652466,
+        1.933242
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "model": "resource_name:\"models/generic/concrete_bag_kit_01/concrete_bag_01_a.vmdl\"",
+      "hammeruniqueid": "13747",
+      "startdisabled": true,
+      "solid": "6"
+    },
+    {
+      "classname": "prop_dynamic",
+      "targetname": "[PR#]props.2v2",
+      "origin": [
+        406.921936,
+        562.736633,
+        117.164757
+      ],
+      "angles": [
+        2.713995,
+        103.498062,
+        0.00759
+      ],
+      "scales": [
+        1,
+        0.816413,
+        1
+      ],
+      "model": "resource_name:\"models/generic/concrete_bag_kit_01/concrete_bag_01_a.vmdl\"",
+      "hammeruniqueid": "13744",
+      "startdisabled": true,
+      "solid": "6"
+    },
+    {
+      "classname": "prop_dynamic",
+      "targetname": "[PR#]props.2v2",
+      "origin": [
+        385.957092,
+        573.812012,
+        123.549683
+      ],
+      "angles": [
+        -3.293548,
+        6.047285,
+        178.605087
+      ],
+      "scales": [
+        1,
+        1,
+        1.102107
+      ],
+      "model": "resource_name:\"models/generic/concrete_bag_kit_01/concrete_bag_01_a.vmdl\"",
+      "hammeruniqueid": "13746",
+      "startdisabled": true,
+      "solid": "6"
+    },
+    {
+      "classname": "prop_dynamic",
+      "targetname": "[PR#]props.2v2",
+      "origin": [
+        414,
+        512,
+        85.044136
+      ],
+      "angles": [
+        0,
+        0,
+        0
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "model": "resource_name:\"models/de_overpass/construction/traffic_cone_1.vmdl\"",
+      "hammeruniqueid": "13753",
+      "startdisabled": true,
+      "solid": "0"
+    },
+    {
+      "classname": "prop_dynamic",
+      "targetname": "[PR#]props.2v2",
+      "origin": [
+        422.000031,
+        634,
+        81.477348
+      ],
+      "angles": [
+        -5.392308,
+        332.112579,
+        0.512734
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "model": "resource_name:\"models/de_overpass/construction/traffic_cone_1.vmdl\"",
+      "hammeruniqueid": "13754",
+      "startdisabled": true,
+      "solid": "0"
+    },
+    {
+      "classname": "prop_dynamic",
+      "targetname": "[PR#]props.2v2",
+      "origin": [
+        645,
+        -267,
+        88.851723
+      ],
+      "angles": [
+        0,
+        30,
+        0
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "model": "resource_name:\"models/de_overpass/construction/traffic_cone_1.vmdl\"",
+      "hammeruniqueid": "13755",
+      "startdisabled": true,
+      "solid": "0"
+    },
+    {
+      "classname": "prop_dynamic",
+      "targetname": "[PR#]props.2v2",
+      "origin": [
+        635,
+        -195,
+        88.000221
+      ],
+      "angles": [
+        0,
+        285.000031,
+        0
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "model": "resource_name:\"models/de_overpass/construction/traffic_cone_1.vmdl\"",
+      "hammeruniqueid": "13756",
+      "startdisabled": true,
+      "solid": "0"
+    },
+    {
+      "classname": "prop_dynamic",
+      "targetname": "[PR#]props.2v2",
+      "origin": [
+        616.828552,
+        -103.127075,
+        72
+      ],
+      "angles": [
+        -0.460622,
+        286.466949,
+        2.214544
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "model": "resource_name:\"models/de_overpass/construction/traffic_cone_1.vmdl\"",
+      "hammeruniqueid": "13757",
+      "startdisabled": true,
+      "solid": "0"
+    },
+    {
+      "classname": "prop_dynamic",
+      "targetname": "[PR#]props.2v2",
+      "origin": [
+        646.577393,
+        -14.772034,
+        73.84391
+      ],
+      "angles": [
+        -0.460622,
+        256.46701,
+        2.214544
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "model": "resource_name:\"models/de_overpass/construction/traffic_cone_1.vmdl\"",
+      "hammeruniqueid": "13758",
+      "startdisabled": true,
+      "solid": "0"
+    },
+    {
+      "classname": "prop_dynamic",
+      "targetname": "[PR#]props.2v2",
+      "origin": [
+        371,
+        631.000061,
+        80
+      ],
+      "angles": [
+        1.766754,
+        213.133301,
+        3.427976
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "model": "resource_name:\"models/de_overpass/junk/wheelbarrow01a/wheelbarrow01a.vmdl\"",
+      "hammeruniqueid": "13760",
+      "startdisabled": true,
+      "solid": "6"
+    },
+    {
+      "classname": "prop_dynamic",
+      "targetname": "[PR#]props.2v2",
+      "origin": [
+        733.5,
+        -678.125,
+        90.435699
+      ],
+      "angles": [
+        0,
+        15,
+        0
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "model": "resource_name:\"models/generic/garbage_bin_kit_01/garbagebin02_body.vmdl\"",
+      "hammeruniqueid": "13761",
+      "startdisabled": true,
+      "solid": "6"
+    },
+    {
+      "classname": "prop_dynamic",
+      "targetname": "[PR#]props.2v2",
+      "origin": [
+        756.5,
+        -694.125,
+        102
+      ],
+      "angles": [
+        0,
+        315,
+        0
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "model": "resource_name:\"models/generic/garbage_bin_kit_01/garbagebin01_wheel.vmdl\"",
+      "hammeruniqueid": "13764",
+      "startdisabled": true,
+      "solid": "6"
+    },
+    {
+      "classname": "prop_dynamic",
+      "targetname": "[PR#]props.2v2",
+      "origin": [
+        744.5,
+        -654.125,
+        102
+      ],
+      "angles": [
+        0,
+        60,
+        0
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "model": "resource_name:\"models/generic/garbage_bin_kit_01/garbagebin01_wheel.vmdl\"",
+      "hammeruniqueid": "13763",
+      "startdisabled": true,
+      "solid": "6"
+    },
+    {
+      "classname": "prop_dynamic",
+      "targetname": "[PR#]props.2v2",
+      "origin": [
+        733.5,
+        -678.125,
+        127
+      ],
+      "angles": [
+        0,
+        15,
+        0
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "model": "resource_name:\"models/generic/garbage_bin_kit_01/garbagebin02_lid.vmdl\"",
+      "hammeruniqueid": "13762",
+      "startdisabled": true,
+      "solid": "6"
+    },
+    {
+      "classname": "prop_dynamic",
+      "targetname": "[PR#]props.2v2",
+      "origin": [
+        725.797852,
+        -615.657227,
+        88.480179
+      ],
+      "angles": [
+        0.164326,
+        120.419907,
+        -2.8627
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "model": "resource_name:\"models/generic/garbage_bin_kit_01/garbagebin02_body.vmdl\"",
+      "hammeruniqueid": "13770",
+      "startdisabled": true,
+      "solid": "6"
+    },
+    {
+      "classname": "prop_dynamic",
+      "targetname": "[PR#]props.2v2",
+      "origin": [
+        734.567017,
+        -589.505615,
+        101.047318
+      ],
+      "angles": [
+        -2.396665,
+        60.456951,
+        -1.574634
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "model": "resource_name:\"models/generic/garbage_bin_kit_01/garbagebin01_wheel.vmdl\"",
+      "hammeruniqueid": "13771",
+      "startdisabled": true,
+      "solid": "6"
+    },
+    {
+      "classname": "prop_dynamic",
+      "targetname": "[PR#]props.2v2",
+      "origin": [
+        699.245544,
+        -611.688232,
+        98.966125
+      ],
+      "angles": [
+        2.140077,
+        165.388306,
+        -1.908874
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "model": "resource_name:\"models/generic/garbage_bin_kit_01/garbagebin01_wheel.vmdl\"",
+      "hammeruniqueid": "13772",
+      "startdisabled": true,
+      "solid": "6"
+    },
+    {
+      "classname": "prop_dynamic",
+      "targetname": "[PR#]props.2v2",
+      "origin": [
+        724.170044,
+        -616.491455,
+        124.998703
+      ],
+      "angles": [
+        0.164326,
+        120.419907,
+        -2.8627
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "model": "resource_name:\"models/generic/garbage_bin_kit_01/garbagebin02_lid.vmdl\"",
+      "hammeruniqueid": "13773",
+      "startdisabled": true,
+      "solid": "6"
+    },
+    {
+      "classname": "prop_dynamic",
+      "targetname": "[PR#]props.2v2",
+      "origin": [
+        752.641174,
+        -620.46228,
+        101.145714
+      ],
+      "angles": [
+        -2.396665,
+        60.456951,
+        -1.574634
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "model": "resource_name:\"models/generic/garbage_bin_kit_01/garbagebin01_wheel.vmdl\"",
+      "hammeruniqueid": "13774",
+      "startdisabled": true,
+      "solid": "6"
+    },
+    {
+      "classname": "prop_dynamic",
+      "targetname": "[PR#]props.2v2",
+      "origin": [
+        716.655029,
+        -641.382629,
+        99.063728
+      ],
+      "angles": [
+        -0.899373,
+        315.402649,
+        2.722823
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "model": "resource_name:\"models/generic/garbage_bin_kit_01/garbagebin01_wheel.vmdl\"",
+      "hammeruniqueid": "13775",
+      "startdisabled": true,
+      "solid": "6"
+    },
+    {
+      "classname": "prop_dynamic",
+      "targetname": "[PR#]props.2v2",
+      "origin": [
+        1812,
+        1528.000122,
+        163
+      ],
+      "angles": [
+        -0.565436,
+        262.060425,
+        -4.047491
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "model": "resource_name:\"models/cs_italy/italy_barricade/italy_barricade.vmdl\"",
+      "hammeruniqueid": "13779",
+      "startdisabled": true,
+      "solid": "6"
+    },
+    {
+      "classname": "prop_dynamic",
+      "targetname": "[PR#]props.2v2",
+      "origin": [
+        1779,
+        1550,
+        160.000031
+      ],
+      "angles": [
+        0,
+        15,
+        0
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "model": "resource_name:\"models/de_overpass/construction/traffic_cone_1.vmdl\"",
+      "hammeruniqueid": "13780",
+      "startdisabled": true,
+      "solid": "0"
+    },
+    {
+      "classname": "prop_dynamic",
+      "targetname": "[PR#]props.2v2",
+      "origin": [
+        1841,
+        1546,
+        160.000031
+      ],
+      "angles": [
+        0,
+        255,
+        0
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "model": "resource_name:\"models/de_overpass/construction/traffic_cone_1.vmdl\"",
+      "hammeruniqueid": "13781",
+      "startdisabled": true,
+      "solid": "0"
+    },
+    {
+      "classname": "prop_dynamic",
+      "targetname": "[PR#]props.2v2",
+      "origin": [
+        2305,
+        1554,
+        160
+      ],
+      "angles": [
+        0,
+        270,
+        0
+      ],
+      "scales": [
+        0.999999,
+        1.17857,
+        0.982143
+      ],
+      "model": "resource_name:\"models/generic/doors/door_kit_01/door_simple_56_112_01.vmdl\"",
+      "hammeruniqueid": "13782",
+      "startdisabled": true,
+      "solid": "0"
+    },
+    {
+      "classname": "counterterrorist_wingman_intro",
+      "origin": [
+        2120,
+        380,
+        160.181305
+      ],
+      "angles": [
+        0,
+        57.020775,
+        0
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "hammeruniqueid": "13793"
+    },
+    {
+      "classname": "terrorist_wingman_intro",
+      "origin": [
+        828,
+        524,
+        96.181305
+      ],
+      "angles": [
+        0,
+        177.020737,
+        0
+      ],
+      "scales": [
+        1,
+        1,
+        1
+      ],
+      "hammeruniqueid": "13794"
+    }
+  ]
+}
