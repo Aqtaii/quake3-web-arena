@@ -2,7 +2,7 @@ name: Check installed maps and dedicated server
 on:
   push:
     branches: [codex/inferno-import]
-    paths: ['server/**', 'web/lobby.js', '.github/workflows/inferno-runtime.yml']
+    paths: ['server/**', 'web/lobby.js', 'tools/inferno/playtest.mjs', '.github/workflows/inferno-runtime.yml']
 permissions:
   contents: read
 jobs:
