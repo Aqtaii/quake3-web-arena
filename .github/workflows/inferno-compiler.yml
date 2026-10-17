@@ -22,7 +22,8 @@ jobs:
           echo 'f48f6f1d0db2b910ef9cb5dc5d8a722852510f3c5c278dc17615c0466b8a7a3d  tools/compiler.7z' | sha256sum --check
           if command -v 7z >/dev/null; then extractor=7z; else extractor=7zz; fi
           "$extractor" x -y -otools/compiler tools/compiler.7z > reports/extract.log
-          compiler=$(find tools/compiler -type f -name q3map2 | head -n 1)
+          find tools/compiler -maxdepth 3 -type f -name '*q3map2*'
+          compiler=$(find tools/compiler -type f \\( -name q3map2 -o -name q3map2.x86_64 \\) | head -n 1)
           test -n "$compiler"
           chmod +x "$compiler"
           set +e
