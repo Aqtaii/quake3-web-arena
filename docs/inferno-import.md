@@ -84,3 +84,29 @@ References:
 
 Source 2 export does not preserve the original lighting or game logic automatically.
 Asset redistribution permissions must be assessed before publishing Valve assets as a web download.
+
+## Conversion implementation notes
+
+Use an established Quake map compiler for the final BSP rather than treating a
+glTF mesh as if the Quake collision loader could read it directly.
+
+The maintained [q3map2 model compiler](https://github.com/Garux/netradiant-custom/blob/master/tools/quake3/q3map2/model.cpp)
+supports static model surfaces and generated collision brushes. Its `misc_model`
+clip-model flag is bit 1 (value 2); the renderer geometry and the original physics
+geometry must be handled separately. Source trigger and navigation volumes are
+not ordinary solid walls. Preserve player-only and projectile-only clip categories.
+
+The official-maintainer NetRadiant Custom Linux release researched for this purpose
+is `20260114`, archive `netradiant-custom-20260114-linux-x86_64.7z`,
+SHA-256 `f48f6f1d0db2b910ef9cb5dc5d8a722852510f3c5c278dc17615c0466b8a7a3d`.
+It has not been downloaded or executed by this pipeline yet.
+
+Source 2 Viewer 20.1 bakes its coordinate conversion into vertices. Its implementation
+uses scale 0.0254 and a quaternion with yaw 0, pitch -pi/2, roll -pi/2.
+Apply the inverse of the exact conversion after glTF node placement transforms;
+do not guess an axis swap or rescale already converted vertices twice.
+See [the pinned conversion implementation](https://github.com/ValveResourceFormat/ValveResourceFormat/blob/20.1/ValveResourceFormat/IO/GltfModelExporter.Conversion.cs).
+
+The current Quake image loaders and material pipeline also need compatible texture
+outputs and shader definitions. Source 2 PBR materials and baked lighting are not
+preserved automatically by the glTF export or by q3map2.
