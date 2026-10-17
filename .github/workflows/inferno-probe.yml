@@ -1,0 +1,81 @@
+name: Probe official Inferno data
+on:
+  push:
+    branches: [codex/inferno-import]
+    paths: [.github/workflows/inferno-probe.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: inferno-probe
+  cancel-in-progress: true
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Download pinned SteamRE downloader
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p tools reports cs2
+          curl --fail --location --retry 3 --proto '=https' --tlsv1.2 \
+            https://github.com/SteamRE/DepotDownloader/releases/download/DepotDownloader_3.4.0/DepotDownloader-linux-x64.zip \
+            -o tools/downloader.zip
+          sha256sum tools/downloader.zip > reports/tool-sha256.txt
+          unzip -q tools/downloader.zip -d tools/downloader
+          chmod +x tools/downloader/DepotDownloader
+          printf '%s\n' 'game/csgo/maps/de_inferno.vpk' 'game/csgo/gameinfo.gi' > files.txt
+      - name: Request only Inferno from official Steam depot
+        shell: bash
+        run: |
+          set -uo pipefail
+          timeout 600 tools/downloader/DepotDownloader \
+            -app 730 -depot 2347770 -filelist files.txt -dir cs2 \
+            -validate -max-downloads 4 2>&1 | tee reports/steam-download.log
+          result=${PIPESTATUS[0]}
+          printf '%s\n' "$result" > reports/download-exit-code.txt
+          python3 - <<'PY'
+          import hashlib, json, pathlib, struct
+          root = pathlib.Path("cs2")
+          files = []
+          for p in sorted(root.rglob("*")):
+              if p.is_file() and p.name in ("de_inferno.vpk", "gameinfo.gi"):
+                  sha = hashlib.sha256()
+                  with p.open("rb") as f:
+                      for chunk in iter(lambda: f.read(1024 * 1024), b""):
+                          sha.update(chunk)
+                  info = {"path": str(p), "bytes": p.stat().st_size, "sha256": sha.hexdigest()}
+                  if p.suffix == ".vpk":
+                      with p.open("rb") as f:
+                          header = f.read(12)
+                      if len(header) == 12:
+                          signature, version, tree_bytes = struct.unpack("<III", header)
+                          info.update(vpk_signature=hex(signature), vpk_version=version, tree_bytes=tree_bytes)
+                          info["valid_vpk_header"] = signature == 0x55AA1234 and version in (1, 2)
+                  files.append(info)
+          report = {
+              "source": "Steam content servers, app 730, depot 2347770",
+              "authentication": "anonymous; no credentials supplied",
+              "files": files,
+              "ready_for_conversion": False,
+              "note": "Acquisition probe only. Geometry, shared dependencies, collision and Wingman bounds still need conversion.",
+          }
+          pathlib.Path("reports/acquisition.json").write_text(json.dumps(report, indent=2) + "\n")
+          with open(__import__("os").environ["GITHUB_STEP_SUMMARY"], "a") as f:
+              f.write("## Official Inferno acquisition probe\n\n")
+              f.write("```json\n" + json.dumps(report, indent=2) + "\n```\n")
+          PY
+          if [ "$result" -ne 0 ]; then
+            echo "::error::Steam acquisition failed. Read steam-download.log; no map has been imported."
+            exit "$result"
+          fi
+          test -s cs2/game/csgo/maps/de_inferno.vpk
+      - name: Preserve diagnostic reports only
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: inferno-acquisition-report
+          path: reports/
+          if-no-files-found: warn
+          retention-days: 7
