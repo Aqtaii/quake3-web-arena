@@ -51,7 +51,7 @@ try {
     };
     const sessions=[];
     for(let i=0;i<2;i++){
-        const target=await call('Target.createTarget',{url:'about:blank'});
+        const target=await call('Target.createTarget',{url:'about:blank',newWindow:true});
         const attached=await call('Target.attachToTarget',{targetId:target.targetId,flatten:true}),session=attached.sessionId;
         sessions.push(session);await call('Runtime.enable',{},session);await call('Page.enable',{},session);
         await call('Emulation.setDeviceMetricsOverride',{width:960,height:720,deviceScaleFactor:1,mobile:false},session);
@@ -65,9 +65,10 @@ try {
         report.clients.push(state);assert(state.active&&state.map===map,'Client did not enter map: '+JSON.stringify(state));
         console.log('Client active',i,JSON.stringify(state));
     }
-    await delay(5000);
     for(let i=0;i<sessions.length;i++){
-        const session=sessions[i],status=await evaluate(session,'Q3Test.status()');
+        const session=sessions[i];
+        await call('Page.bringToFront',{},session);await delay(2500);
+        const status=await evaluate(session,'Q3Test.status()');
         const peers=await evaluate(session,'Q3Test.remotePlayers()');
         report.clients[i]={...status,remotePlayers:peers};
         assert(status.active&&status.map===map,'Client disconnected');
@@ -80,6 +81,7 @@ try {
         writeFileSync(join(output,'client-'+i+'.log'),await evaluate(session,'Q3Test.log()'));
     }
     // Walking uses the genuine Quake input and server physics.
+    await call('Page.bringToFront',{},sessions[0]);await delay(250);
     const before=await evaluate(sessions[0],'Q3Test.status().origin');
     await evaluate(sessions[0],'Q3Test.key(119,true);true');await delay(750);
     await evaluate(sessions[0],'Q3Test.key(119,false);true');await delay(500);
