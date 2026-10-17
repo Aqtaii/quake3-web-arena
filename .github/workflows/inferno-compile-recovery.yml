@@ -1,5 +1,8 @@
 name: Compile and Playtest Inferno Recovery Candidate
 on:
+  push:
+    branches: [codex/inferno-import]
+    paths: ['.github/workflows/inferno-compile-recovery.yml', 'tools/inferno/repair_prepared.py']
   workflow_dispatch:
 permissions:
   contents: read
