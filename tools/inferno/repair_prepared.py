@@ -23,16 +23,15 @@ STRUCTURAL_RENDER_KEYWORDS = (
     "pillar", "column", "road", "pavement", "cobble", "gravel", "dirt_blend",
     "concrete_blend", "concrete_02", "shop_front", "window", "balcony",
     "courtyard", "wood_crate", "concrete_bag", "sandbag", "door_simple",
-    "door_double", "barn_door", "rollup_door_02", "shingles", "barricade", "curb"
+    "door_double", "barn_door", "rollup_door_02", "shingles", "barricade", "curb",
+    "stone", "bombsite"
 )
 
-WALKABLE_COLLISION_KEYWORDS = (
-    "floor", "ground", "stair", "step", "curb", "road", "pavement", "cobble",
-    "gravel", "dirt_blend", "concrete_blend", "concrete_02", "tile", "courtyard",
-    "balcony", "wall04", "wall_09_blend", "facade", "plaster", "brick", "house",
-    "apartment_interior", "arch", "pillar", "column", "shop_front", "wood_crate",
-    "concrete_bag", "sandbag", "door_simple", "door_double", "barn_door",
-    "rollup_door_02", "barricade"
+NON_SOLID_KEYWORDS = (
+    "foliage", "ivy", "leaves", "leaf", "vine", "fern", "weed", "grass",
+    "cable", "wire", "rope", "chain", "cloth", "fabric", "curtain", "banner",
+    "flag", "decal", "graffiti", "poster", "paper", "trash", "bottle", "flower",
+    "plant", "spiderweb", "lightbulb", "lantern"
 )
 
 
@@ -71,20 +70,20 @@ def world_matrices(doc):
     return result
 
 
-def tri_max_edge_sq(p0, p1, p2):
+def tri_metrics(p0, p1, p2):
     d01 = (p0[0]-p1[0])**2 + (p0[1]-p1[1])**2 + (p0[2]-p1[2])**2
     d12 = (p1[0]-p2[0])**2 + (p1[1]-p2[1])**2 + (p1[2]-p2[2])**2
     d20 = (p2[0]-p0[0])**2 + (p2[1]-p0[1])**2 + (p2[2]-p0[2])**2
-    return max(d01, d12, d20)
-
-
-def tri_area_sq(p0, p1, p2):
+    max_edge_sq = max(d01, d12, d20)
     ux, uy, uz = p1[0]-p0[0], p1[1]-p0[1], p1[2]-p0[2]
     vx, vy, vz = p2[0]-p0[0], p2[1]-p0[1], p2[2]-p0[2]
     cx = uy*vz - uz*vy
     cy = uz*vx - ux*vz
     cz = ux*vy - uy*vx
-    return 0.25 * (cx*cx + cy*cy + cz*cz)
+    norm_sq = cx*cx + cy*cy + cz*cz
+    area_sq = 0.25 * norm_sq
+    abs_nz = abs(cz) / math.sqrt(norm_sq) if norm_sq > 1e-12 else 0.0
+    return max_edge_sq, area_sq, abs_nz
 
 
 def overlaps_box(p0, p1, p2, box):
@@ -133,8 +132,8 @@ def repair_render_and_collect_collision(baseq3):
     material_map = {}
     used_material_names = set()
 
-    render_box = ([256.0, -1018.5, 16.0], [2917.5, 1794.5, 752.0])
-    collision_box = ([448.0, -826.0, 60.0], [2726.0, 1602.0, 320.0])
+    render_box = ([384.0, -890.0, 24.0], [2790.0, 1666.0, 680.0])
+    collision_box = ([448.0, -826.0, 55.0], [2726.0, 1602.0, 310.0])
 
     structural_collision_gltf_tris = []
     kept_tris_total = 0
@@ -184,8 +183,10 @@ def repair_render_and_collect_collision(baseq3):
             is_structural_render = is_overlay or alpha_mode != "OPAQUE" or any(
                 k in inp for k in STRUCTURAL_RENDER_KEYWORDS
             )
-            is_walkable_collision = (not is_overlay) and any(
-                k in inp for k in WALKABLE_COLLISION_KEYWORDS
+            can_collide = (
+                (not is_overlay)
+                and alpha_mode == "OPAQUE"
+                and not any(k in inp for k in NON_SOLID_KEYWORDS)
             )
 
             attrs = prim["attributes"]
@@ -198,14 +199,20 @@ def repair_render_and_collect_collision(baseq3):
             for i in range(0, len(indices), 3):
                 i0, i1, i2 = indices[i], indices[i+1], indices[i+2]
                 p0, p1, p2 = src_pts[i0], src_pts[i1], src_pts[i2]
+                max_edge_sq, area_sq, abs_nz = tri_metrics(p0, p1, p2)
 
-                if is_walkable_collision and overlaps_box(p0, p1, p2, collision_box):
-                    if tri_max_edge_sq(p0, p1, p2) >= 256.0 and tri_area_sq(p0, p1, p2) >= 4.0:
+                if can_collide and overlaps_box(p0, p1, p2, collision_box):
+                    # Walkable floors/ramps/stairs (abs_nz >= 0.5): keep all triangles with edge >= 3 in and area >= 0.5
+                    # Vertical walls/crates/pillars (abs_nz < 0.5): keep structural triangles with edge >= 20 in and area >= 16
+                    if (abs_nz >= 0.5 and max_edge_sq >= 9.0 and area_sq >= 0.25 and max(p0[2], p1[2], p2[2]) <= 260.0) or (
+                        abs_nz < 0.5 and is_structural_render and max_edge_sq >= 400.0 and area_sq >= 16.0
+                    ):
                         structural_collision_gltf_tris.append((gltf_pts[i0], gltf_pts[i1], gltf_pts[i2]))
 
                 if not overlaps_box(p0, p1, p2, render_box):
                     continue
-                if not is_structural_render and tri_max_edge_sq(p0, p1, p2) < 256.0:
+                min_edge_sq = 16.0 if (is_structural_render or abs_nz >= 0.5) else 576.0
+                if max_edge_sq < min_edge_sq:
                     continue
                 kept.extend((i0, i1, i2))
 
@@ -396,8 +403,8 @@ def point_in_tri_2d(px, py, a, b, c):
     d1 = sign(px, py, a[0], a[1], b[0], b[1])
     d2 = sign(px, py, b[0], b[1], c[0], c[1])
     d3 = sign(px, py, c[0], c[1], a[0], a[1])
-    has_neg = (d1 < -0.01) or (d2 < -0.01) or (d3 < -0.01)
-    has_pos = (d1 > 0.01) or (d2 > 0.01) or (d3 > 0.01)
+    has_neg = (d1 < -0.05) or (d2 < -0.05) or (d3 < -0.05)
+    has_pos = (d1 > 0.05) or (d2 > 0.05) or (d3 > 0.05)
     return not (has_neg and has_pos)
 
 
@@ -409,7 +416,6 @@ def repair_map_and_shaders(baseq3, all_collision_src_tris):
         '"model" "models/inferno/render.gltf"\n"angles" "0 90 0"\n"modelscale" "39.37007874015748"\n"spawnflags" "4"',
         '"model" "models/inferno/render.gltf"\n"angles" "0 90 0"\n"modelscale" "39.37007874015748"\n"spawnflags" "0"',
     )
-    map_path.write_text(map_text)
 
     spawns = re.findall(r'"classname" "info_player_deathmatch"\s+"origin" "([^"]+)"', map_text)
     assert len(spawns) == 8, f"Expected 8 spawns, found {len(spawns)}"
@@ -417,14 +423,28 @@ def repair_map_and_shaders(baseq3, all_collision_src_tris):
         sx, sy, sz = map(float, s.split())
         best_floor = -math.inf
         for a, b, c in all_collision_src_tris:
-            if min(a[0], b[0], c[0]) - 8 <= sx <= max(a[0], b[0], c[0]) + 8 and min(a[1], b[1], c[1]) - 8 <= sy <= max(a[1], b[1], c[1]) + 8:
+            if min(a[0], b[0], c[0]) - 24 <= sx <= max(a[0], b[0], c[0]) + 24 and min(a[1], b[1], c[1]) - 24 <= sy <= max(a[1], b[1], c[1]) + 24:
                 if point_in_tri_2d(sx, sy, a, b, c):
-                    tz = (a[2] + b[2] + c[2]) / 3.0
-                    if tz <= sz and tz > best_floor:
+                    tz = max(a[2], b[2], c[2])
+                    if tz <= sz + 8 and tz > best_floor:
                         best_floor = tz
-        print(f"Spawn {idx}: origin=({sx}, {sy}, {sz}) -> solid floor below at Z={best_floor:.2f} (drop={sz - best_floor:.2f})")
-        if best_floor < -100 or sz - best_floor > 96:
+        if best_floor == -math.inf:
+            # Fallback to nearest floor triangle within 32-unit XY radius (player bbox is 30x30)
+            for a, b, c in all_collision_src_tris:
+                cx = (a[0] + b[0] + c[0]) / 3.0
+                cy = (a[1] + b[1] + c[1]) / 3.0
+                if (cx - sx)**2 + (cy - sy)**2 <= 32.0**2:
+                    tz = max(a[2], b[2], c[2])
+                    if tz <= sz + 8 and tz > best_floor:
+                        best_floor = tz
+        new_sz = max(sz, math.ceil(best_floor + 28.0))
+        if new_sz != sz:
+            map_text = map_text.replace(f'"origin" "{s}"', f'"origin" "{sx:g} {sy:g} {new_sz:g}"', 1)
+        print(f"Spawn {idx}: origin=({sx}, {sy}, {sz} -> {new_sz}) -> solid floor below at Z={best_floor:.2f} (clearance={new_sz - best_floor:.2f})")
+        if best_floor < -100 or new_sz - best_floor > 120:
             raise RuntimeError(f"Spawn {idx} at ({sx}, {sy}, {sz}) lacks solid floor underneath (best_floor={best_floor})")
+
+    map_path.write_text(map_text)
 
     shader_path = baseq3 / "scripts/inferno.shader"
     shader_text = shader_path.read_text()
