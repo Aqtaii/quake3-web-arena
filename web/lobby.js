@@ -20,6 +20,14 @@ window.Q3Lobby=(()=>{
     async function refresh(){
         try{
             const data=await request('/api/rooms');list.replaceChildren();knownRooms.clear();
+            if(Array.isArray(data.maps)&&data.maps.length){
+                const select=document.getElementById('room-map'),previous=select.value;
+                const installed=data.maps.filter(map=>typeof map==='string'&&/^[a-z0-9_]{1,48}$/.test(map));
+                if(installed.length&&JSON.stringify([...select.options].map(o=>o.value))!==JSON.stringify(installed)){
+                    select.replaceChildren(...installed.map(map=>{const option=document.createElement('option');option.value=map;option.textContent=map==='inferno_wingman'?'Inferno · Yoldaş':map;return option;}));
+                    if(installed.includes(previous))select.value=previous;
+                }
+            }
             for(const room of data.rooms){
                 knownRooms.set(room.id,room);
                 const row=document.createElement('div');row.className='room-entry';
