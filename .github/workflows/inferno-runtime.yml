@@ -1,0 +1,68 @@
+name: Check installed maps and dedicated server
+on:
+  push:
+    branches: [codex/inferno-import]
+    paths: ['server/**', 'web/lobby.js', '.github/workflows/inferno-runtime.yml']
+permissions:
+  contents: read
+jobs:
+  runtime:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Fetch this commit in the cloud
+        env:
+          COMMIT: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p server web/baseq3
+          for path in server/engine.mjs server/server.mjs server/game-data.mjs web/lobby.js web/game-data.json web/quake3.wasm web/baseq3/pak0.pk3 web/baseq3/pak1.pk3 web/baseq3/pak9.pk3; do
+            curl --fail --location --retry 3 "https://raw.githubusercontent.com/Aqtaii/quake3-web-arena/$COMMIT/$path" -o "$path"
+          done
+          node --check server/server.mjs
+          node --check server/engine.mjs
+          node --check web/lobby.js
+      - name: Verify map catalog and original WASM server startup
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+          import { tmpdir } from 'node:os';
+          import { join } from 'node:path';
+          import { spawn } from 'node:child_process';
+          import { readGameData } from './server/game-data.mjs';
+          const fixture=mkdtempSync(join(tmpdir(),'q3-manifest-'));
+          try {
+            mkdirSync(join(fixture,'baseq3'));
+            writeFileSync(join(fixture,'baseq3/pak0.pk3'),'');
+            const manifest={packages:['pak0.pk3'],maps:['q3dm1','inferno_wingman']};
+            const save=()=>writeFileSync(join(fixture,'game-data.json'),JSON.stringify(manifest));
+            save();assert.deepEqual(readGameData(fixture).maps,manifest.maps);
+            manifest.maps=['../escape'];save();assert.throws(()=>readGameData(fixture));
+            manifest.maps=['q3dm1'];manifest.serverPackages=['pak404.pk3'];save();assert.throws(()=>readGameData(fixture));
+            console.log('PASS installed-map validation, traversal rejection and missing-package rejection');
+          } finally {rmSync(fixture,{recursive:true,force:true});}
+          const child=spawn(process.execPath,['server/server.mjs'],{env:{...process.env,PORT:'18081',MAX_ROOMS:'1'},stdio:['ignore','pipe','pipe']});
+          let log='';child.stdout.on('data',b=>log+=b);child.stderr.on('data',b=>log+=b);
+          const base='http://127.0.0.1:18081';
+          try {
+            let healthy=false;
+            for(let i=0;i<100;i++){try{if((await fetch(base+'/healthz')).ok){healthy=true;break;}}catch{}await new Promise(r=>setTimeout(r,100));}
+            assert(healthy,'server failed to listen: '+log);
+            const catalog=await(await fetch(base+'/api/rooms')).json();
+            assert.deepEqual(catalog.maps,['q3dm1','q3dm7','q3dm17','q3tourney2']);
+            const create=map=>fetch(base+'/api/rooms',{method:'POST',headers:{Origin:base,'Content-Type':'application/json'},body:JSON.stringify({map,name:'Cloud test'})});
+            const invalid=await create('inferno_wingman');assert.equal(invalid.status,400,'uninstalled map was advertised');
+            const response=await create('q3dm1');const room=await response.json();
+            assert.equal(response.status,201,JSON.stringify(room)+'\n'+log);
+            assert.equal(room.map,'q3dm1');assert.match(room.ownerToken,/^[a-f0-9]{64}$/);
+            assert.equal((await create('q3dm7')).status,400,'room capacity exceeded');
+            const remove=await fetch(base+'/api/rooms/'+room.id,{method:'DELETE',headers:{Origin:base,Authorization:'Bearer '+room.ownerToken}});
+            assert.equal(remove.status,200);
+            console.log('PASS actual original-source WASM map startup, API catalog, uninstalled map rejection, room capacity and owner deletion');
+          } finally {
+            child.kill('SIGTERM');
+            await new Promise(resolve=>{child.once('close',resolve);setTimeout(()=>{child.kill('SIGKILL');resolve();},3000).unref();});
+            console.log(log.slice(-6000));
+          }
+          JS
