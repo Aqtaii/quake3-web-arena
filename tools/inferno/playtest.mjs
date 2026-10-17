@@ -73,7 +73,8 @@ try {
         assert(status.active&&status.map===map,'Client disconnected');
         assert(status.origin.every(Number.isFinite),'Invalid player position');
         assert(status.origin[2]>-100,'Player fell through source collision');
-        assert(peers.some(p=>p.id===report.clients[1-i].clientNum),'Other real client was not replicated');
+        // Quake intentionally omits players outside this viewpoint's PVS.
+        // If needed, the follow test below verifies authoritative remote state.
         const shot=await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:false},session);
         writeFileSync(join(output,'inferno-client-'+i+'.png'),Buffer.from(shot.data,'base64'));
         writeFileSync(join(output,'client-'+i+'.log'),await evaluate(session,'Q3Test.log()'));
@@ -86,6 +87,24 @@ try {
     report.walk={before,after,distance:Math.hypot(...after.map((v,i)=>v-before[i]))};
     assert(after[2]>-100,'Walking fell through source collision');
     assert(report.walk.distance>.5,'Forward movement failed; inspect spawn clearance');
+    const other=report.clients[1].clientNum;
+    if(report.clients[0].remotePlayers.some(p=>p.id===other)){
+        report.replication={method:'visible snapshot entity',client:other};
+    }else{
+        // Original spectator follow moves the snapshot viewpoint to the other
+        // player without cheats or changing visibility/collision rules.
+        await evaluate(sessions[0],'Q3Test.command("team spectator");true');
+        await delay(1500);
+        await evaluate(sessions[0],'Q3Test.command("follow '+other+'");true');
+        await delay(2000);
+        const followed=await evaluate(sessions[0],'Q3Test.status()');
+        const target=await evaluate(sessions[1],'Q3Test.status()');
+        assert.equal(followed.clientNum,other,'Spectator did not receive followed player state');
+        assert(Math.hypot(...followed.origin.map((v,i)=>v-target.origin[i]))<4,'Remote follow origin differs');
+        report.replication={method:'original spectator follow across PVS',client:other,followed:followed.origin,target:target.origin};
+    }
+    const roomState=await(await fetch(base+'/api/rooms/'+room.id)).json();
+    assert.equal(roomState.players,2,'Both genuine network clients must remain connected');
     assert.equal(report.errors.length,0,'Unhandled browser exceptions occurred');
     report.passed=true;
     console.log('PASS two real WASM clients joined original Inferno geometry, replicated and walked',JSON.stringify(report));
