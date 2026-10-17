@@ -254,8 +254,8 @@ jobs:
           off,length=lumps[13]
           assert length%104==0
           surfaces=[struct.unpack_from("<26i",data,off+i) for i in range(0,length,104)]
-          assert surfaces and max(s[13] for s in surfaces)<1000, "Quake tess vertex limit"
-          assert max(s[15] for s in surfaces)<6000, "Quake tess index limit"
+          assert surfaces and max(s[4] for s in surfaces)<1000, "Quake tess vertex limit"
+          assert max(s[6] for s in surfaces)<6000, "Quake tess index limit"
           assert lumps[8][1]>0, "No collision brushes"
           entities=data[lumps[0][0]:sum(lumps[0])].decode()
           assert entities.count('"info_player_deathmatch"')==8
