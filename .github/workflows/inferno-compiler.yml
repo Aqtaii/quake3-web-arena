@@ -1,0 +1,44 @@
+name: Check Quake map compiler
+on:
+  push:
+    branches: [codex/inferno-import]
+    paths: [.github/workflows/inferno-compiler.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compiler:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Verify and inspect maintained Quake map compiler
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p tools/compiler reports
+          curl --fail --location --retry 3 --proto '=https' --tlsv1.2 \
+            https://github.com/Garux/netradiant-custom/releases/download/20260114/netradiant-custom-20260114-linux-x86_64.7z \
+            -o tools/compiler.7z
+          echo 'f48f6f1d0db2b910ef9cb5dc5d8a722852510f3c5c278dc17615c0466b8a7a3d  tools/compiler.7z' | sha256sum --check
+          if command -v 7z >/dev/null; then extractor=7z; else extractor=7zz; fi
+          "$extractor" x -y -otools/compiler tools/compiler.7z > reports/extract.log
+          compiler=$(find tools/compiler -type f -name q3map2 | head -n 1)
+          test -n "$compiler"
+          chmod +x "$compiler"
+          set +e
+          "$compiler" -help > reports/q3map2-help.txt 2>&1
+          status=$?
+          set -e
+          cat reports/q3map2-help.txt
+          if [ "$status" -gt 1 ]; then exit "$status"; fi
+          grep -iq 'q3map' reports/q3map2-help.txt
+          command -v magick || command -v convert || true
+          command -v google-chrome || command -v chromium || true
+          printf '%s\n' "$compiler" > reports/compiler-path.txt
+      - name: Preserve compiler diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: inferno-map-compiler-report
+          path: reports/
+          retention-days: 7
