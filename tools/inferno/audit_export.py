@@ -10,19 +10,19 @@ import sys
 from urllib.parse import unquote, urlparse
 
 
-def local_uri(document, uri):
+def local_uri(document, uri, export_root):
     if uri.startswith("data:"):
         return None
     if urlparse(uri).scheme or uri.startswith(("/", "\\\\")):
         raise ValueError("External or absolute asset URI: " + uri)
-    root = document.parent.resolve()
-    target = (root / unquote(uri)).resolve()
+    root = export_root.resolve()
+    target = (document.parent / unquote(uri)).resolve()
     if not target.is_relative_to(root):
         raise ValueError("Asset URI escapes export directory: " + uri)
     return target
 
 
-def audit_document(path):
+def audit_document(path, export_root):
     data = json.loads(path.read_text(encoding="utf-8"))
     errors, missing, triangles = [], [], 0
     if data.get("asset", {}).get("version") != "2.0":
@@ -33,7 +33,7 @@ def audit_document(path):
         if uri is None:
             errors.append("JSON glTF buffer has no URI")
             continue
-        target = local_uri(path, uri)
+        target = local_uri(path, uri, export_root)
         if target is not None:
             if not target.is_file():
                 missing.append(uri)
@@ -68,7 +68,7 @@ def audit_document(path):
     for image in data.get("images", []):
         uri = image.get("uri")
         if uri:
-            target = local_uri(path, uri)
+            target = local_uri(path, uri, export_root)
             if target is not None and not target.is_file():
                 missing.append(uri)
         elif not 0 <= image.get("bufferView", -1) < len(views):
@@ -96,7 +96,7 @@ def main():
     documents = []
     for path in sorted(root.rglob("*.gltf")):
         try:
-            documents.append(audit_document(path))
+            documents.append(audit_document(path, root))
         except (ValueError, OSError, TypeError, KeyError) as exc:
             documents.append({"file": str(path), "errors": [str(exc)]})
     log = log_path.read_text(encoding="utf-8", errors="replace") if log_path.exists() else ""
