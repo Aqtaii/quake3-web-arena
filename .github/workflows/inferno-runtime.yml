@@ -8,15 +8,15 @@ permissions:
 jobs:
   runtime:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - name: Fetch this commit in the cloud
         env:
           COMMIT: ${{ github.sha }}
         run: |
           set -euo pipefail
-          mkdir -p server web/baseq3
-          for path in server/engine.mjs server/server.mjs server/game-data.mjs web/lobby.js web/game-data.json web/quake3.wasm web/baseq3/pak0.pk3 web/baseq3/pak1.pk3 web/baseq3/pak9.pk3; do
+          mkdir -p server web/baseq3 tools/inferno
+          for path in server/engine.mjs server/server.mjs server/game-data.mjs web/index.html web/lava.js web/network.js web/pk3.js web/quake3-host.js web/showroom.js web/lobby.js tools/inferno/playtest.mjs web/game-data.json web/quake3.wasm web/baseq3/pak0.pk3 web/baseq3/pak1.pk3 web/baseq3/pak9.pk3; do
             curl --fail --location --retry 3 "https://raw.githubusercontent.com/Aqtaii/quake3-web-arena/$COMMIT/$path" -o "$path"
           done
           node --check server/server.mjs
@@ -66,3 +66,13 @@ jobs:
             console.log(log.slice(-6000));
           }
           JS
+      - name: Verify two-browser multiplayer harness on original Quake map
+        run: node tools/inferno/playtest.mjs . q3dm1 reports
+      - name: Preserve runtime diagnostics and screenshots
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: quake-runtime-check
+          path: reports/
+          if-no-files-found: ignore
+          retention-days: 3
