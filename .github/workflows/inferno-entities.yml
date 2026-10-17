@@ -93,11 +93,11 @@ jobs:
               print("ENTITY FILE", str(path), "BYTES", path.stat().st_size)
               print("FORMAT SAMPLE", text[:2000])
               selected = []
-              for block in re.split(r"(?m)^====\\d+====\\s*$", text):
+              for block in re.split(r"(?m)^====\d+====\s*$", text):
                   if re.search(r"2v2|wingman|scrim", block, re.I):
                       fields = {}
                       for line in block.splitlines():
-                          match = re.match(r"^(\\w+)\\s+(.+)$", line)
+                          match = re.match(r"^(\w+)\s+(.+)$", line)
                           if match:
                               key, value = match.groups()
                               try: value = json.loads(value)
