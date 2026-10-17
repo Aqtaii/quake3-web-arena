@@ -71,6 +71,53 @@ jobs:
             exit "$result"
           fi
           test -s cs2/game/csgo/maps/de_inferno.vpk
+      - name: Inspect Source 2 geometry and missing dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --proto '=https' --tlsv1.2 \
+            https://github.com/ValveResourceFormat/ValveResourceFormat/releases/download/20.1/cli-linux-x64.zip \
+            -o tools/viewer.zip
+          echo '29d25a6d6b62377fc5386c3e5145b0a2180a401a50041afe9494b3f503deaef5  tools/viewer.zip' | sha256sum --check
+          unzip -q tools/viewer.zip -d tools/viewer
+          chmod +x tools/viewer/Source2Viewer-CLI
+          tools/viewer/Source2Viewer-CLI --version | tee reports/viewer-version.txt
+          tools/viewer/Source2Viewer-CLI -i cs2/game/csgo/maps/de_inferno.vpk --vpk_list > reports/inferno-vpk-files.txt
+          mkdir -p exported
+          set +e
+          timeout 600 tools/viewer/Source2Viewer-CLI \
+            -i cs2/game/csgo/maps/de_inferno.vpk \
+            --vpk_filepath maps/de_inferno.vmap_c \
+            --game cs2/game/csgo/gameinfo.gi \
+            --gltf_export_format gltf --gltf_export_materials --gltf_export_extras \
+            -o exported/ > reports/export.log 2>&1
+          result=$?
+          set -e
+          printf '%s\n' "$result" > reports/export-exit-code.txt
+          find exported -type f -printf '%p %s bytes\n' > reports/exported-files.txt
+          if [ -f exceptions.txt ]; then cp exceptions.txt reports/; fi
+          tail -n 70 reports/export.log
+          python3 - <<'PY'
+          import json, pathlib, os
+          records = []
+          for path in pathlib.Path("exported").rglob("*.gltf"):
+              data = json.loads(path.read_text())
+              records.append({
+                  "path": str(path), "meshes": len(data.get("meshes", [])),
+                  "nodes": len(data.get("nodes", [])), "materials": len(data.get("materials", [])),
+                  "images": len(data.get("images", [])),
+                  "extensionsRequired": data.get("extensionsRequired", []),
+              })
+          result = {"gltf": records, "ready_for_quake": False}
+          pathlib.Path("reports/geometry.json").write_text(json.dumps(result, indent=2) + "\n")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
+              f.write("\n## Source 2 export diagnostics\n\n```json\n" + json.dumps(result, indent=2) + "\n```\n")
+          print(json.dumps(result, indent=2))
+          PY
+          if [ "$result" -ne 0 ]; then
+            echo "::error::Source 2 export failed; see export.log for missing dependencies or format errors."
+            exit "$result"
+          fi
       - name: Preserve diagnostic reports only
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
