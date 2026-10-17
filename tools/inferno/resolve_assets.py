@@ -82,6 +82,7 @@ def main():
     parser.add_argument("--report", type=pathlib.Path, required=True)
     parser.add_argument("--max-chunks", type=int, default=100)
     parser.add_argument("--manifest", default="2520908610273941189")
+    parser.add_argument("--batch-size", type=int, default=8)
     args = parser.parse_args()
     text = args.log.read_text(encoding="utf-8", errors="replace")
     missing = sorted(set(re.findall(r'Failed to load "([^"]+)"', text)))
@@ -105,24 +106,14 @@ def main():
     if len(groups) > args.max_chunks:
         raise SystemExit("Dependency chunk limit exceeded: " + str(len(groups)))
     extracted = []
-    for (index, archive), assets in groups.items():
+    def extract_group(index, archive, assets):
         relative_index = index.relative_to(args.indexes)
         game_folder = relative_index.parent.name
         if archive == 0x7FFF:
             chunk = index
         else:
             name = index.name.replace("_dir.vpk", "_" + format(archive, "03d") + ".vpk")
-            relative_chunk = relative_index.with_name(name)
-            filelist = args.report.parent / "dependency-filelist.txt"
-            filelist.parent.mkdir(parents=True, exist_ok=True)
-            filelist.write_text(relative_chunk.as_posix() + "\n")
-            command = [
-                args.downloader, "-app", "730", "-depot", "2347770", "-manifest", args.manifest,
-                "-filelist", str(filelist), "-dir", str(args.indexes),
-                "-validate", "-max-downloads", "4",
-            ]
-            subprocess.run(command, check=True, timeout=180)
-            chunk = args.indexes / relative_chunk
+            chunk = args.indexes / relative_index.with_name(name)
         with chunk.open("rb") as stream:
             for asset, entry in assets:
                 target = safe_target(args.game / game_folder, asset)
@@ -153,11 +144,36 @@ def main():
                                   "crc32": format(crc & 0xFFFFFFFF, "08x")})
         if archive != 0x7FFF:
             chunk.unlink()
+
+    # Bound temporary disk use while avoiding a new Steam login for every archive.
+    batch_size = max(1, min(16, args.batch_size))
+    requests = list(groups)
+    for start in range(0, len(requests), batch_size):
+        batch = requests[start:start + batch_size]
+        paths = []
+        for index, archive in batch:
+            if archive != 0x7FFF:
+                name = index.name.replace("_dir.vpk", "_" + format(archive, "03d") + ".vpk")
+                paths.append(index.relative_to(args.indexes).with_name(name).as_posix())
+        if paths:
+            filelist = args.report.parent / "dependency-filelist.txt"
+            filelist.parent.mkdir(parents=True, exist_ok=True)
+            filelist.write_text("\n".join(paths) + "\n")
+            subprocess.run([
+                args.downloader, "-app", "730", "-depot", "2347770", "-manifest", args.manifest,
+                "-filelist", str(filelist), "-dir", str(args.indexes), "-validate", "-max-downloads", "8",
+            ], check=True, timeout=300)
+        # Extract the whole batch before requesting another, then remove its archive data.
+        for index, archive in batch:
+            extract_group(index, archive, groups[(index, archive)])
+        print("Resolved archive groups: " + str(min(start + batch_size, len(requests))) + "/" + str(len(requests)), flush=True)
+
     report = {"requested": len(missing), "chunks": len(groups), "extracted": extracted, "not_in_indexes": unknown}
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(json.dumps(report, indent=2) + "\n")
     print(json.dumps({"requested": len(missing), "chunks": len(groups),
                       "extracted": len(extracted), "not_in_indexes": unknown}, indent=2))
+
 
 
 if __name__ == "__main__":
