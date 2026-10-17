@@ -1,0 +1,3221 @@
+{
+  "source": {
+    "app": 730,
+    "depot": 2347770,
+    "manifest": "2520908610273941189",
+    "map": "de_inferno",
+    "verification_run": "https://github.com/Aqtaii/quake3-web-arena/actions/runs/39028318191"
+  },
+  "note": "Original Source 2 light metadata. Quake lighting conversion is not a pixel-identical Source 2 renderer.",
+  "lights": [
+    {
+      "classname": "light_omni2",
+      "origin": [
+        1105.30249,
+        2952.841797,
+        551.118774
+      ],
+      "angles": [
+        8.203953,
+        93.683754,
+        -0.763194
+      ],
+      "color": [
+        255,
+        190,
+        136
+      ],
+      "brightness": -5.64453,
+      "brightness_lumens": 20,
+      "brightness_candelas": 2,
+      "brightnessscale": 1,
+      "range": 200,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        896.47406,
+        2992.144531,
+        560.360535
+      ],
+      "angles": [
+        -11.659554,
+        192.704819,
+        -5.194175
+      ],
+      "color": [
+        255,
+        190,
+        136
+      ],
+      "brightness": -5.64453,
+      "brightness_lumens": 20,
+      "brightness_candelas": 2,
+      "brightnessscale": 1,
+      "range": 200,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        952.841003,
+        2989.996338,
+        518.33905
+      ],
+      "angles": [
+        7.360307,
+        130.228745,
+        14.675282
+      ],
+      "color": [
+        255,
+        190,
+        136
+      ],
+      "brightness": -5.64453,
+      "brightness_lumens": 20,
+      "brightness_candelas": 2,
+      "brightnessscale": 1,
+      "range": 200,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        637.602539,
+        3168,
+        263.792755
+      ],
+      "angles": [
+        -89.999947,
+        0,
+        0
+      ],
+      "color": [
+        229,
+        235,
+        255
+      ],
+      "brightness": -2.02734,
+      "brightness_lumens": 150,
+      "brightness_candelas": 20,
+      "brightnessscale": 1,
+      "range": 150,
+      "enabled": true,
+      "inner_angle": 56.299999,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        1104.546387,
+        3419.529541,
+        186.450943
+      ],
+      "angles": [
+        -89.999947,
+        0,
+        0
+      ],
+      "color": [
+        229,
+        235,
+        255
+      ],
+      "brightness": -4.32031,
+      "brightness_lumens": 50,
+      "brightness_candelas": 4,
+      "brightnessscale": 1,
+      "range": 150,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        1135.080566,
+        3071.648438,
+        294.072693
+      ],
+      "angles": [
+        89.999977,
+        270.000122,
+        0
+      ],
+      "color": [
+        255,
+        201,
+        157
+      ],
+      "brightness": -0.320312,
+      "brightness_lumens": 800,
+      "brightness_candelas": 64,
+      "brightnessscale": 1,
+      "range": 450,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        1304.259766,
+        3071.648438,
+        278.072693
+      ],
+      "angles": [
+        89.999977,
+        270.000122,
+        0
+      ],
+      "color": [
+        255,
+        201,
+        157
+      ],
+      "brightness": -0.320312,
+      "brightness_lumens": 800,
+      "brightness_candelas": 64,
+      "brightnessscale": 1,
+      "range": 450,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        1304.12854,
+        3264.206543,
+        278.072693
+      ],
+      "angles": [
+        89.999977,
+        90,
+        0
+      ],
+      "color": [
+        255,
+        201,
+        157
+      ],
+      "brightness": -0.320312,
+      "brightness_lumens": 800,
+      "brightness_candelas": 64,
+      "brightnessscale": 1,
+      "range": 450,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        1136.124023,
+        3264.085693,
+        294.072693
+      ],
+      "angles": [
+        89.999977,
+        90,
+        0
+      ],
+      "color": [
+        255,
+        201,
+        157
+      ],
+      "brightness": -0.320312,
+      "brightness_lumens": 800,
+      "brightness_candelas": 64,
+      "brightnessscale": 1,
+      "range": 450,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        776.259766,
+        3094.611816,
+        318.405457
+      ],
+      "angles": [
+        89.999977,
+        270.000122,
+        0
+      ],
+      "color": [
+        255,
+        201,
+        157
+      ],
+      "brightness": -0.320312,
+      "brightness_lumens": 800,
+      "brightness_candelas": 64,
+      "brightnessscale": 1,
+      "range": 450,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        775.740173,
+        3241.388184,
+        318.405457
+      ],
+      "angles": [
+        89.999977,
+        90,
+        0
+      ],
+      "color": [
+        255,
+        201,
+        157
+      ],
+      "brightness": -0.320312,
+      "brightness_lumens": 800,
+      "brightness_candelas": 64,
+      "brightnessscale": 1,
+      "range": 450,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        1027.63147,
+        3312.26001,
+        262.405457
+      ],
+      "angles": [
+        89.999977,
+        0,
+        0
+      ],
+      "color": [
+        255,
+        201,
+        157
+      ],
+      "brightness": -0.320312,
+      "brightness_lumens": 800,
+      "brightness_candelas": 64,
+      "brightnessscale": 1,
+      "range": 450,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        1377.79187,
+        3121.205566,
+        248.500397
+      ],
+      "angles": [
+        0,
+        0,
+        0
+      ],
+      "color": [
+        255,
+        255,
+        255
+      ],
+      "brightness": -2.350639,
+      "brightness_lumens": 196,
+      "brightness_candelas": 16,
+      "brightnessscale": 1,
+      "range": 100,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        1480,
+        3121.205566,
+        248.500397
+      ],
+      "angles": [
+        0,
+        0,
+        0
+      ],
+      "color": [
+        255,
+        255,
+        255
+      ],
+      "brightness": -2.350639,
+      "brightness_lumens": 196,
+      "brightness_candelas": 16,
+      "brightnessscale": 1,
+      "range": 100,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        1568,
+        3121.205566,
+        248.500397
+      ],
+      "angles": [
+        0,
+        0,
+        0
+      ],
+      "color": [
+        255,
+        255,
+        255
+      ],
+      "brightness": -2.350639,
+      "brightness_lumens": 196,
+      "brightness_candelas": 16,
+      "brightnessscale": 1,
+      "range": 100,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        1568,
+        3222.361084,
+        248.500397
+      ],
+      "angles": [
+        0,
+        179.999893,
+        0
+      ],
+      "color": [
+        255,
+        255,
+        255
+      ],
+      "brightness": -2.350639,
+      "brightness_lumens": 196,
+      "brightness_candelas": 16,
+      "brightnessscale": 1,
+      "range": 100,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        1480,
+        3222.361084,
+        248.500397
+      ],
+      "angles": [
+        0,
+        179.999893,
+        0
+      ],
+      "color": [
+        255,
+        255,
+        255
+      ],
+      "brightness": -2.350639,
+      "brightness_lumens": 196,
+      "brightness_candelas": 16,
+      "brightnessscale": 1,
+      "range": 100,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        1377.79187,
+        3222.361084,
+        248.500397
+      ],
+      "angles": [
+        0,
+        179.999893,
+        0
+      ],
+      "color": [
+        255,
+        255,
+        255
+      ],
+      "brightness": -2.350639,
+      "brightness_lumens": 196,
+      "brightness_candelas": 16,
+      "brightnessscale": 1,
+      "range": 100,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        866.903748,
+        3435.437988,
+        257.706238
+      ],
+      "angles": [
+        89.999977,
+        180.000107,
+        0
+      ],
+      "color": [
+        255,
+        201,
+        157
+      ],
+      "brightness": -0.320312,
+      "brightness_lumens": 800,
+      "brightness_candelas": 64,
+      "brightnessscale": 1,
+      "range": 450,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        23.780293,
+        3237.956543,
+        277.324799
+      ],
+      "angles": [
+        89.999977,
+        0,
+        0
+      ],
+      "color": [
+        255,
+        202,
+        160
+      ],
+      "brightness": 0.703125,
+      "brightness_lumens": 400,
+      "brightness_candelas": 130,
+      "brightnessscale": 1,
+      "range": 350,
+      "enabled": true,
+      "inner_angle": 32.299999,
+      "outer_angle": 80.099998
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        23.780279,
+        3245.241455,
+        279.925873
+      ],
+      "angles": [
+        89.999977,
+        0,
+        0
+      ],
+      "color": [
+        255,
+        202,
+        160
+      ],
+      "brightness": -4.32031,
+      "brightness_lumens": 50,
+      "brightness_candelas": 4,
+      "brightnessscale": 1,
+      "range": 20,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        874.611694,
+        2931.119385,
+        277.119537
+      ],
+      "angles": [
+        89.999977,
+        180.000107,
+        0
+      ],
+      "color": [
+        255,
+        201,
+        157
+      ],
+      "brightness": -0.320312,
+      "brightness_lumens": 800,
+      "brightness_candelas": 64,
+      "brightnessscale": 1,
+      "range": 450,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        1671.248535,
+        2064.231445,
+        297.85498
+      ],
+      "angles": [
+        90,
+        0,
+        0
+      ],
+      "color": [
+        199,
+        216,
+        255
+      ],
+      "brightness": 0.25,
+      "brightness_lumens": 300,
+      "brightness_candelas": 95,
+      "brightnessscale": 1,
+      "range": 200,
+      "enabled": true,
+      "inner_angle": 21.700001,
+      "outer_angle": 86.5
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        1676.296143,
+        2064.231445,
+        301.304108
+      ],
+      "angles": [
+        90,
+        0,
+        0
+      ],
+      "color": [
+        199,
+        216,
+        255
+      ],
+      "brightness": -6.64453,
+      "brightness_lumens": 10,
+      "brightness_candelas": 1,
+      "brightnessscale": 1,
+      "range": 200,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        2263.930664,
+        1336.655396,
+        248.345062
+      ],
+      "angles": [
+        89.999977,
+        180.000031,
+        0
+      ],
+      "color": [
+        255,
+        255,
+        255
+      ],
+      "brightness": -7.155152,
+      "brightness_lumens": 7,
+      "brightness_candelas": 1,
+      "brightnessscale": 1,
+      "range": 24,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        2263.930664,
+        1368.655396,
+        248.345062
+      ],
+      "angles": [
+        89.999977,
+        180.000031,
+        0
+      ],
+      "color": [
+        255,
+        255,
+        255
+      ],
+      "brightness": -7.155152,
+      "brightness_lumens": 7,
+      "brightness_candelas": 1,
+      "brightnessscale": 1,
+      "range": 24,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        2263.930664,
+        1408.655396,
+        248.345062
+      ],
+      "angles": [
+        89.999977,
+        180.000031,
+        0
+      ],
+      "color": [
+        255,
+        255,
+        255
+      ],
+      "brightness": -7.155152,
+      "brightness_lumens": 7,
+      "brightness_candelas": 1,
+      "brightnessscale": 1,
+      "range": 24,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        2263.930664,
+        1480.655396,
+        248.345062
+      ],
+      "angles": [
+        89.999977,
+        180.000031,
+        0
+      ],
+      "color": [
+        255,
+        255,
+        255
+      ],
+      "brightness": -7.155152,
+      "brightness_lumens": 7,
+      "brightness_candelas": 1,
+      "brightnessscale": 1,
+      "range": 24,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        2263.930664,
+        1440.655396,
+        248.345062
+      ],
+      "angles": [
+        89.999977,
+        180.000031,
+        0
+      ],
+      "color": [
+        255,
+        255,
+        255
+      ],
+      "brightness": -7.155152,
+      "brightness_lumens": 7,
+      "brightness_candelas": 1,
+      "brightnessscale": 1,
+      "range": 24,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        2263.930664,
+        1512.655396,
+        248.345062
+      ],
+      "angles": [
+        89.999977,
+        180.000031,
+        0
+      ],
+      "color": [
+        255,
+        255,
+        255
+      ],
+      "brightness": -7.155152,
+      "brightness_lumens": 7,
+      "brightness_candelas": 1,
+      "brightnessscale": 1,
+      "range": 24,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        2619.150391,
+        1296.376343,
+        247.782455
+      ],
+      "angles": [
+        80.421951,
+        180.000015,
+        89.999977
+      ],
+      "color": [
+        255,
+        193,
+        141
+      ],
+      "brightness": 0.070312,
+      "brightness_lumens": 350,
+      "brightness_candelas": 84,
+      "brightnessscale": 1,
+      "range": 300,
+      "enabled": true,
+      "inner_angle": 55.700001,
+      "outer_angle": 84
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        2628.588379,
+        1296.376343,
+        251.795395
+      ],
+      "angles": [
+        77.15818,
+        0,
+        -90.000008
+      ],
+      "color": [
+        255,
+        193,
+        141
+      ],
+      "brightness": -6.05859,
+      "brightness_lumens": 15,
+      "brightness_candelas": 1,
+      "brightnessscale": 1,
+      "range": 16,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        2567.848633,
+        1542.866699,
+        264.070312
+      ],
+      "angles": [
+        80.421951,
+        270.000031,
+        89.999977
+      ],
+      "color": [
+        255,
+        193,
+        141
+      ],
+      "brightness": 0.070312,
+      "brightness_lumens": 350,
+      "brightness_candelas": 84,
+      "brightnessscale": 1,
+      "range": 300,
+      "enabled": true,
+      "inner_angle": 55.700001,
+      "outer_angle": 84
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        2567.848633,
+        1552.304688,
+        268.083252
+      ],
+      "angles": [
+        77.15818,
+        90.000015,
+        -90.000008
+      ],
+      "color": [
+        255,
+        193,
+        141
+      ],
+      "brightness": -6.05859,
+      "brightness_lumens": 15,
+      "brightness_candelas": 1,
+      "brightnessscale": 1,
+      "range": 16,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        2369.187988,
+        1337.074829,
+        262.571259
+      ],
+      "angles": [
+        80.421951,
+        90.000008,
+        89.999977
+      ],
+      "color": [
+        255,
+        193,
+        141
+      ],
+      "brightness": 0.070312,
+      "brightness_lumens": 350,
+      "brightness_candelas": 84,
+      "brightnessscale": 1,
+      "range": 300,
+      "enabled": true,
+      "inner_angle": 55.700001,
+      "outer_angle": 84
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        2369.187988,
+        1327.636841,
+        266.584198
+      ],
+      "angles": [
+        77.15818,
+        270,
+        -90.000008
+      ],
+      "color": [
+        255,
+        193,
+        141
+      ],
+      "brightness": -6.05859,
+      "brightness_lumens": 15,
+      "brightness_candelas": 1,
+      "brightnessscale": 1,
+      "range": 16,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        2656.615967,
+        1124.187988,
+        262.770813
+      ],
+      "angles": [
+        80.421951,
+        180.000015,
+        89.999977
+      ],
+      "color": [
+        255,
+        193,
+        141
+      ],
+      "brightness": 0.070312,
+      "brightness_lumens": 350,
+      "brightness_candelas": 84,
+      "brightnessscale": 1,
+      "range": 300,
+      "enabled": true,
+      "inner_angle": 55.700001,
+      "outer_angle": 84
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        2666.053955,
+        1124.187988,
+        266.783752
+      ],
+      "angles": [
+        77.15818,
+        0,
+        -90.000008
+      ],
+      "color": [
+        255,
+        193,
+        141
+      ],
+      "brightness": -6.05859,
+      "brightness_lumens": 15,
+      "brightness_candelas": 1,
+      "brightnessscale": 1,
+      "range": 16,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        2493.869629,
+        1219.780884,
+        259.817505
+      ],
+      "angles": [
+        80.421951,
+        0,
+        89.999977
+      ],
+      "color": [
+        255,
+        193,
+        141
+      ],
+      "brightness": 0.070312,
+      "brightness_lumens": 350,
+      "brightness_candelas": 84,
+      "brightnessscale": 1,
+      "range": 300,
+      "enabled": true,
+      "inner_angle": 55.700001,
+      "outer_angle": 84
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        2484.431641,
+        1219.780884,
+        263.830444
+      ],
+      "angles": [
+        77.15818,
+        180.000046,
+        -90.000008
+      ],
+      "color": [
+        255,
+        193,
+        141
+      ],
+      "brightness": -6.05859,
+      "brightness_lumens": 15,
+      "brightness_candelas": 1,
+      "brightnessscale": 1,
+      "range": 16,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        1816,
+        1472.047852,
+        342
+      ],
+      "angles": [
+        89.999947,
+        184.999969,
+        0
+      ],
+      "color": [
+        217,
+        227,
+        255
+      ],
+      "brightness": 0.089844,
+      "brightness_lumens": 300,
+      "brightness_candelas": 85,
+      "brightnessscale": 1,
+      "range": 250,
+      "enabled": true,
+      "inner_angle": 50.099998,
+      "outer_angle": 76.599998
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        1816,
+        1474.047852,
+        354.28949
+      ],
+      "angles": [
+        89.999947,
+        184.999969,
+        0
+      ],
+      "color": [
+        217,
+        227,
+        255
+      ],
+      "brightness": -5.64453,
+      "brightness_lumens": 20,
+      "brightness_candelas": 2,
+      "brightnessscale": 1,
+      "range": 250,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        2402.955078,
+        1116,
+        296.383331
+      ],
+      "angles": [
+        80.000031,
+        0,
+        179.999893
+      ],
+      "color": [
+        181,
+        205,
+        255
+      ],
+      "brightness": 0.015625,
+      "brightness_lumens": 400,
+      "brightness_candelas": 80,
+      "brightnessscale": 1,
+      "range": 340,
+      "enabled": true,
+      "inner_angle": 62.099998,
+      "outer_angle": 92.900002
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        2410.184082,
+        1116,
+        302.90332
+      ],
+      "angles": [
+        0,
+        0,
+        0
+      ],
+      "color": [
+        181,
+        205,
+        255
+      ],
+      "brightness": -6.64453,
+      "brightness_lumens": 10,
+      "brightness_candelas": 1,
+      "brightnessscale": 1,
+      "range": 303.044006,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        1847.869873,
+        691.352173,
+        286.045319
+      ],
+      "angles": [
+        89.999985,
+        270,
+        0
+      ],
+      "color": [
+        255,
+        196,
+        148
+      ],
+      "brightness": -0.839844,
+      "brightness_lumens": 300,
+      "brightness_candelas": 44,
+      "brightnessscale": 1,
+      "range": 400,
+      "enabled": true,
+      "inner_angle": 49.200001,
+      "outer_angle": 143.199997
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        1756.364502,
+        412.408691,
+        278.477997
+      ],
+      "angles": [
+        0,
+        90,
+        0
+      ],
+      "color": [
+        255,
+        255,
+        255
+      ],
+      "brightness": -3.350639,
+      "brightness_lumens": 98,
+      "brightness_candelas": 8,
+      "brightnessscale": 1,
+      "range": 64,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        1756.364502,
+        672.408691,
+        278.477997
+      ],
+      "angles": [
+        0,
+        90,
+        0
+      ],
+      "color": [
+        255,
+        255,
+        255
+      ],
+      "brightness": -3.350639,
+      "brightness_lumens": 98,
+      "brightness_candelas": 8,
+      "brightnessscale": 1,
+      "range": 64,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -1244,
+        656,
+        56.662663
+      ],
+      "angles": [
+        89.999992,
+        90,
+        0
+      ],
+      "color": [
+        203,
+        219,
+        255
+      ],
+      "brightness": 1.35156,
+      "brightness_lumens": 1000,
+      "brightness_candelas": 203,
+      "brightnessscale": 1,
+      "range": 256,
+      "enabled": true,
+      "inner_angle": 66.599998,
+      "outer_angle": 88
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -1430.176392,
+        800.836914,
+        -25.585176
+      ],
+      "angles": [
+        90,
+        0,
+        0
+      ],
+      "color": [
+        255,
+        221,
+        163
+      ],
+      "brightness": -2.32031,
+      "brightness_lumens": 200,
+      "brightness_candelas": 16,
+      "brightnessscale": 1,
+      "range": 100,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -1690.494263,
+        743.746521,
+        -21.636656
+      ],
+      "angles": [
+        0,
+        315,
+        -90
+      ],
+      "color": [
+        255,
+        221,
+        163
+      ],
+      "brightness": 0.277344,
+      "brightness_lumens": 300,
+      "brightness_candelas": 96,
+      "brightnessscale": 1,
+      "range": 100,
+      "enabled": true,
+      "inner_angle": 42.200001,
+      "outer_angle": 74.400002
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -1653.75708,
+        789.774536,
+        -17.535839
+      ],
+      "angles": [
+        0,
+        352.614746,
+        -90
+      ],
+      "color": [
+        255,
+        167,
+        89
+      ],
+      "brightness": -0.722656,
+      "brightness_lumens": 150,
+      "brightness_candelas": 48,
+      "brightnessscale": 1,
+      "range": 140.925995,
+      "enabled": true,
+      "inner_angle": 42.200001,
+      "outer_angle": 74.400002
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -1232,
+        299.444489,
+        262.102081
+      ],
+      "angles": [
+        90,
+        0,
+        0
+      ],
+      "color": [
+        255,
+        217,
+        165
+      ],
+      "brightness": -1.15234,
+      "brightness_lumens": 450,
+      "brightness_candelas": 36,
+      "brightnessscale": 1,
+      "range": 400,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -1581.296997,
+        -135.994888,
+        91.98764
+      ],
+      "angles": [
+        89.999985,
+        0,
+        0
+      ],
+      "color": [
+        252,
+        215,
+        160
+      ],
+      "brightness": -5.64453,
+      "brightness_lumens": 20,
+      "brightness_candelas": 2,
+      "brightnessscale": 1,
+      "range": 68,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -1581.296997,
+        -135.994888,
+        87.820831
+      ],
+      "angles": [
+        79.999985,
+        0,
+        0
+      ],
+      "color": [
+        252,
+        215,
+        160
+      ],
+      "brightness": 0.367188,
+      "brightness_lumens": 400,
+      "brightness_candelas": 103,
+      "brightnessscale": 1,
+      "range": 400,
+      "enabled": true,
+      "inner_angle": 60,
+      "outer_angle": 75
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -1166,
+        -371,
+        158
+      ],
+      "angles": [
+        33.749996,
+        180.000031,
+        0
+      ],
+      "color": [
+        246,
+        208,
+        152
+      ],
+      "brightness": 1.35156,
+      "brightness_lumens": 1000,
+      "brightness_candelas": 203,
+      "brightnessscale": 1,
+      "range": 600,
+      "enabled": true,
+      "inner_angle": 66.599998,
+      "outer_angle": 88
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -1116,
+        -368.000031,
+        151.685303
+      ],
+      "angles": [
+        89.999985,
+        90,
+        0
+      ],
+      "color": [
+        255,
+        202,
+        160
+      ],
+      "brightness": 0.703125,
+      "brightness_lumens": 400,
+      "brightness_candelas": 130,
+      "brightnessscale": 1,
+      "range": 350,
+      "enabled": true,
+      "inner_angle": 32.299999,
+      "outer_angle": 80.099998
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -1123.28479,
+        -368.000031,
+        154.286362
+      ],
+      "angles": [
+        89.999985,
+        90,
+        0
+      ],
+      "color": [
+        255,
+        202,
+        160
+      ],
+      "brightness": -4.32031,
+      "brightness_lumens": 50,
+      "brightness_candelas": 4,
+      "brightnessscale": 1,
+      "range": 20,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -1228.021484,
+        -572.933655,
+        153.261795
+      ],
+      "angles": [
+        89.999977,
+        0,
+        0
+      ],
+      "color": [
+        246,
+        208,
+        152
+      ],
+      "brightness": 0.308594,
+      "brightness_lumens": 300,
+      "brightness_candelas": 99,
+      "brightnessscale": 1,
+      "range": 350,
+      "enabled": true,
+      "inner_angle": 50.099998,
+      "outer_angle": 67.099998
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -1228.021484,
+        -572.933655,
+        159.413239
+      ],
+      "angles": [
+        89.999977,
+        0,
+        0
+      ],
+      "color": [
+        246,
+        208,
+        152
+      ],
+      "brightness": -7.64453,
+      "brightness_lumens": 5,
+      "brightness_candelas": 0,
+      "brightnessscale": 1,
+      "range": 25,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -1228.021484,
+        -316.933655,
+        153.261795
+      ],
+      "angles": [
+        89.999977,
+        0,
+        0
+      ],
+      "color": [
+        246,
+        208,
+        152
+      ],
+      "brightness": 0.308594,
+      "brightness_lumens": 300,
+      "brightness_candelas": 99,
+      "brightnessscale": 1,
+      "range": 350,
+      "enabled": true,
+      "inner_angle": 50.099998,
+      "outer_angle": 67.099998
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -1228.021484,
+        -316.933655,
+        159.413239
+      ],
+      "angles": [
+        89.999977,
+        0,
+        0
+      ],
+      "color": [
+        246,
+        208,
+        152
+      ],
+      "brightness": -7.64453,
+      "brightness_lumens": 5,
+      "brightness_candelas": 0,
+      "brightnessscale": 1,
+      "range": 25,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -1228.021484,
+        -60.933655,
+        153.876968
+      ],
+      "angles": [
+        89.999977,
+        0,
+        0
+      ],
+      "color": [
+        246,
+        208,
+        152
+      ],
+      "brightness": 0.308594,
+      "brightness_lumens": 300,
+      "brightness_candelas": 99,
+      "brightnessscale": 1,
+      "range": 350,
+      "enabled": true,
+      "inner_angle": 50.099998,
+      "outer_angle": 67.099998
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -1228.021484,
+        -60.933655,
+        160.028412
+      ],
+      "angles": [
+        89.999977,
+        0,
+        0
+      ],
+      "color": [
+        246,
+        208,
+        152
+      ],
+      "brightness": -7.64453,
+      "brightness_lumens": 5,
+      "brightness_candelas": 0,
+      "brightnessscale": 1,
+      "range": 25,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -1508.569824,
+        359.769043,
+        98.615204
+      ],
+      "angles": [
+        79.999634,
+        180.000107,
+        -179.999893
+      ],
+      "color": [
+        255,
+        209,
+        172
+      ],
+      "brightness": 0.8125,
+      "brightness_lumens": 700,
+      "brightness_candelas": 140,
+      "brightnessscale": 1,
+      "range": 512,
+      "enabled": true,
+      "inner_angle": 41.5,
+      "outer_angle": 110
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -1499.852051,
+        359.769043,
+        125.346069
+      ],
+      "angles": [
+        0,
+        0,
+        0
+      ],
+      "color": [
+        255,
+        209,
+        172
+      ],
+      "brightness": -3.32031,
+      "brightness_lumens": 100,
+      "brightness_candelas": 8,
+      "brightnessscale": 1,
+      "range": 32,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -1508.569824,
+        711.769043,
+        98.615204
+      ],
+      "angles": [
+        79.999634,
+        180.000107,
+        -179.999893
+      ],
+      "color": [
+        255,
+        209,
+        172
+      ],
+      "brightness": 0.8125,
+      "brightness_lumens": 700,
+      "brightness_candelas": 140,
+      "brightnessscale": 1,
+      "range": 512,
+      "enabled": true,
+      "inner_angle": 41.5,
+      "outer_angle": 110
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -1499.852051,
+        711.769043,
+        125.346069
+      ],
+      "angles": [
+        0,
+        0,
+        0
+      ],
+      "color": [
+        255,
+        209,
+        172
+      ],
+      "brightness": -3.32031,
+      "brightness_lumens": 100,
+      "brightness_candelas": 8,
+      "brightnessscale": 1,
+      "range": 32,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -1508.569824,
+        1063.769043,
+        98.615204
+      ],
+      "angles": [
+        79.999634,
+        180.000107,
+        -179.999893
+      ],
+      "color": [
+        255,
+        209,
+        172
+      ],
+      "brightness": 0.8125,
+      "brightness_lumens": 700,
+      "brightness_candelas": 140,
+      "brightnessscale": 1,
+      "range": 512,
+      "enabled": true,
+      "inner_angle": 41.5,
+      "outer_angle": 110
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -1499.852051,
+        1063.769043,
+        125.346069
+      ],
+      "angles": [
+        0,
+        0,
+        0
+      ],
+      "color": [
+        255,
+        209,
+        172
+      ],
+      "brightness": -3.32031,
+      "brightness_lumens": 100,
+      "brightness_candelas": 8,
+      "brightnessscale": 1,
+      "range": 32,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -1508.569824,
+        1415.769043,
+        98.615204
+      ],
+      "angles": [
+        79.999634,
+        180.000107,
+        -179.999893
+      ],
+      "color": [
+        255,
+        209,
+        172
+      ],
+      "brightness": 0.8125,
+      "brightness_lumens": 700,
+      "brightness_candelas": 140,
+      "brightnessscale": 1,
+      "range": 512,
+      "enabled": true,
+      "inner_angle": 41.5,
+      "outer_angle": 110
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -1499.852051,
+        1415.769043,
+        125.346069
+      ],
+      "angles": [
+        0,
+        0,
+        0
+      ],
+      "color": [
+        255,
+        209,
+        172
+      ],
+      "brightness": -3.32031,
+      "brightness_lumens": 100,
+      "brightness_candelas": 8,
+      "brightnessscale": 1,
+      "range": 32,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -1508.569824,
+        1767.769043,
+        98.615204
+      ],
+      "angles": [
+        79.999634,
+        180.000107,
+        -179.999893
+      ],
+      "color": [
+        255,
+        209,
+        172
+      ],
+      "brightness": 0.8125,
+      "brightness_lumens": 700,
+      "brightness_candelas": 140,
+      "brightnessscale": 1,
+      "range": 512,
+      "enabled": true,
+      "inner_angle": 41.5,
+      "outer_angle": 110
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -1499.852051,
+        1767.769043,
+        125.346069
+      ],
+      "angles": [
+        0,
+        0,
+        0
+      ],
+      "color": [
+        255,
+        209,
+        172
+      ],
+      "brightness": -3.32031,
+      "brightness_lumens": 100,
+      "brightness_candelas": 8,
+      "brightnessscale": 1,
+      "range": 32,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        1036.597168,
+        -144,
+        375.03598
+      ],
+      "angles": [
+        89.999985,
+        0,
+        0
+      ],
+      "color": [
+        255,
+        225,
+        201
+      ],
+      "brightness": 0.359375,
+      "brightness_lumens": 600,
+      "brightness_candelas": 102,
+      "brightnessscale": 1,
+      "range": 300,
+      "enabled": true,
+      "inner_angle": 72.400002,
+      "outer_angle": 100
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        1876.02832,
+        -367.119629,
+        360
+      ],
+      "angles": [
+        0,
+        90.000031,
+        0
+      ],
+      "color": [
+        255,
+        209,
+        172
+      ],
+      "brightness": -0.792969,
+      "brightness_lumens": 450,
+      "brightness_candelas": 46,
+      "brightnessscale": 1,
+      "range": 240,
+      "enabled": true,
+      "inner_angle": 103.599998,
+      "outer_angle": 152.100006
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        1124.070801,
+        -332.028198,
+        369.827942
+      ],
+      "angles": [
+        0,
+        0,
+        0
+      ],
+      "color": [
+        255,
+        209,
+        172
+      ],
+      "brightness": -0.792969,
+      "brightness_lumens": 450,
+      "brightness_candelas": 46,
+      "brightnessscale": 1,
+      "range": 240,
+      "enabled": true,
+      "inner_angle": 103.599998,
+      "outer_angle": 152.100006
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        1185.070801,
+        121.513123,
+        314
+      ],
+      "angles": [
+        0,
+        0,
+        0
+      ],
+      "color": [
+        255,
+        209,
+        172
+      ],
+      "brightness": -0.792969,
+      "brightness_lumens": 450,
+      "brightness_candelas": 46,
+      "brightnessscale": 1,
+      "range": 240,
+      "enabled": true,
+      "inner_angle": 103.599998,
+      "outer_angle": 152.100006
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        1181.070801,
+        -568.795959,
+        244.917618
+      ],
+      "angles": [
+        0,
+        0,
+        0
+      ],
+      "color": [
+        255,
+        209,
+        172
+      ],
+      "brightness": -0.792969,
+      "brightness_lumens": 450,
+      "brightness_candelas": 46,
+      "brightnessscale": 1,
+      "range": 240,
+      "enabled": true,
+      "inner_angle": 103.599998,
+      "outer_angle": 152.100006
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        1008.149658,
+        -646.170593,
+        217.460022
+      ],
+      "angles": [
+        0,
+        0,
+        0
+      ],
+      "color": [
+        255,
+        209,
+        172
+      ],
+      "brightness": -0.792969,
+      "brightness_lumens": 450,
+      "brightness_candelas": 46,
+      "brightnessscale": 1,
+      "range": 240,
+      "enabled": true,
+      "inner_angle": 103.599998,
+      "outer_angle": 152.100006
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        1144,
+        -180.000015,
+        351
+      ],
+      "angles": [
+        89.999977,
+        0,
+        0
+      ],
+      "color": [
+        255,
+        182,
+        120
+      ],
+      "brightness": -2.32031,
+      "brightness_lumens": 200,
+      "brightness_candelas": 16,
+      "brightnessscale": 1,
+      "range": 89,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        1144,
+        -63,
+        351
+      ],
+      "angles": [
+        89.999977,
+        0,
+        0
+      ],
+      "color": [
+        255,
+        182,
+        120
+      ],
+      "brightness": -2.32031,
+      "brightness_lumens": 200,
+      "brightness_candelas": 16,
+      "brightnessscale": 1,
+      "range": 89,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        1029,
+        43.661377,
+        353
+      ],
+      "angles": [
+        89.999977,
+        90,
+        0
+      ],
+      "color": [
+        255,
+        182,
+        120
+      ],
+      "brightness": -2.32031,
+      "brightness_lumens": 200,
+      "brightness_candelas": 16,
+      "brightnessscale": 1,
+      "range": 89,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        1070,
+        -279.822784,
+        353.009491
+      ],
+      "angles": [
+        89.999977,
+        270,
+        0
+      ],
+      "color": [
+        255,
+        182,
+        120
+      ],
+      "brightness": -2.32031,
+      "brightness_lumens": 200,
+      "brightness_candelas": 16,
+      "brightnessscale": 1,
+      "range": 89,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        1266.915771,
+        -441.971802,
+        324
+      ],
+      "angles": [
+        0,
+        180.000061,
+        0
+      ],
+      "color": [
+        255,
+        209,
+        172
+      ],
+      "brightness": -0.792969,
+      "brightness_lumens": 450,
+      "brightness_candelas": 46,
+      "brightnessscale": 1,
+      "range": 240,
+      "enabled": true,
+      "inner_angle": 103.599998,
+      "outer_angle": 152.100006
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        1561.767944,
+        -272.840698,
+        363.762421
+      ],
+      "angles": [
+        0,
+        270.000061,
+        0
+      ],
+      "color": [
+        255,
+        209,
+        172
+      ],
+      "brightness": -0.792969,
+      "brightness_lumens": 450,
+      "brightness_candelas": 46,
+      "brightnessscale": 1,
+      "range": 240,
+      "enabled": true,
+      "inner_angle": 103.599998,
+      "outer_angle": 152.100006
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -22.150684,
+        1372,
+        254.149033
+      ],
+      "angles": [
+        89.999985,
+        0,
+        0
+      ],
+      "color": [
+        225,
+        232,
+        255
+      ],
+      "brightness": -0.320312,
+      "brightness_lumens": 800,
+      "brightness_candelas": 64,
+      "brightnessscale": 1,
+      "range": 184.981995,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        539.978516,
+        123.468445,
+        229.227158
+      ],
+      "angles": [
+        89.999985,
+        0,
+        0
+      ],
+      "color": [
+        204,
+        219,
+        255
+      ],
+      "brightness": -0.667969,
+      "brightness_lumens": 200,
+      "brightness_candelas": 50,
+      "brightnessscale": 1,
+      "range": 334,
+      "enabled": true,
+      "inner_angle": 50,
+      "outer_angle": 85
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        536.857605,
+        222.116989,
+        187.21312
+      ],
+      "angles": [
+        90,
+        0,
+        0
+      ],
+      "color": [
+        213,
+        225,
+        255
+      ],
+      "brightness": -3.32031,
+      "brightness_lumens": 100,
+      "brightness_candelas": 8,
+      "brightnessscale": 1,
+      "range": 256,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        478,
+        222.116989,
+        187.21312
+      ],
+      "angles": [
+        90,
+        0,
+        0
+      ],
+      "color": [
+        213,
+        225,
+        255
+      ],
+      "brightness": -3.32031,
+      "brightness_lumens": 100,
+      "brightness_candelas": 8,
+      "brightnessscale": 1,
+      "range": 256,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        93.507294,
+        1204.035034,
+        467.658417
+      ],
+      "angles": [
+        29.498693,
+        158.491592,
+        174.274872
+      ],
+      "color": [
+        255,
+        233,
+        181
+      ],
+      "brightness": -0.917969,
+      "brightness_lumens": 150,
+      "brightness_candelas": 42,
+      "brightnessscale": 1,
+      "range": 350,
+      "enabled": true,
+      "inner_angle": 48.799999,
+      "outer_angle": 78
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -373.555267,
+        129.684692,
+        133.384018
+      ],
+      "angles": [
+        89.999985,
+        180.000031,
+        0
+      ],
+      "color": [
+        255,
+        196,
+        147
+      ],
+      "brightness": -3.35156,
+      "brightness_lumens": 50,
+      "brightness_candelas": 8,
+      "brightnessscale": 1,
+      "range": 234.136002,
+      "enabled": true,
+      "inner_angle": 68.900002,
+      "outer_angle": 113.599998
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -373.555206,
+        129.684692,
+        124.469345
+      ],
+      "angles": [
+        -89.999985,
+        180.000031,
+        0
+      ],
+      "color": [
+        255,
+        211,
+        176
+      ],
+      "brightness": -3.12109,
+      "brightness_lumens": 30,
+      "brightness_candelas": 9,
+      "brightnessscale": 1,
+      "range": 32,
+      "enabled": true,
+      "inner_angle": 43.700001,
+      "outer_angle": 76.5
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -413.914703,
+        -261.501221,
+        153.237488
+      ],
+      "angles": [
+        89.999985,
+        179.999893,
+        0
+      ],
+      "color": [
+        255,
+        202,
+        160
+      ],
+      "brightness": 0.703125,
+      "brightness_lumens": 400,
+      "brightness_candelas": 130,
+      "brightnessscale": 1,
+      "range": 350,
+      "enabled": true,
+      "inner_angle": 32.299999,
+      "outer_angle": 80.099998
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -413.914703,
+        -268.786133,
+        155.838562
+      ],
+      "angles": [
+        89.999985,
+        179.999893,
+        0
+      ],
+      "color": [
+        255,
+        202,
+        160
+      ],
+      "brightness": -4.32031,
+      "brightness_lumens": 50,
+      "brightness_candelas": 4,
+      "brightnessscale": 1,
+      "range": 20,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -53.5,
+        1651,
+        294.5
+      ],
+      "angles": [
+        89.999969,
+        0,
+        0
+      ],
+      "color": [
+        202,
+        218,
+        255
+      ],
+      "brightness": 0.914062,
+      "brightness_lumens": 700,
+      "brightness_candelas": 150,
+      "brightnessscale": 1,
+      "range": 289.152008,
+      "enabled": true,
+      "inner_angle": 70,
+      "outer_angle": 80
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -143.302841,
+        157.805206,
+        261.638458
+      ],
+      "angles": [
+        0,
+        180,
+        0
+      ],
+      "color": [
+        255,
+        231,
+        211
+      ],
+      "brightness": -2.32031,
+      "brightness_lumens": 200,
+      "brightness_candelas": 16,
+      "brightnessscale": 1,
+      "range": 400,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        75.234879,
+        305.97699,
+        243.569763
+      ],
+      "angles": [
+        89.999985,
+        0,
+        0
+      ],
+      "color": [
+        255,
+        187,
+        129
+      ],
+      "brightness": -1.42969,
+      "brightness_lumens": 100,
+      "brightness_candelas": 30,
+      "brightnessscale": 1,
+      "range": 64,
+      "enabled": true,
+      "inner_angle": 56.099998,
+      "outer_angle": 68.699997
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        75.234879,
+        305.97699,
+        247.291702
+      ],
+      "angles": [
+        -89.999969,
+        180,
+        0
+      ],
+      "color": [
+        255,
+        187,
+        129
+      ],
+      "brightness": -2.57422,
+      "brightness_lumens": 60,
+      "brightness_candelas": 13,
+      "brightnessscale": 1,
+      "range": 68,
+      "enabled": true,
+      "inner_angle": 66.5,
+      "outer_angle": 80.099998
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        316,
+        -600.741211,
+        241.836792
+      ],
+      "angles": [
+        89.999985,
+        90,
+        0
+      ],
+      "color": [
+        255,
+        212,
+        177
+      ],
+      "brightness": -7.64453,
+      "brightness_lumens": 5,
+      "brightness_candelas": 0,
+      "brightnessscale": 1,
+      "range": 64,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        316,
+        -600.741211,
+        236.359909
+      ],
+      "angles": [
+        89.999985,
+        90,
+        0
+      ],
+      "color": [
+        229,
+        235,
+        255
+      ],
+      "brightness": -0.289062,
+      "brightness_lumens": 300,
+      "brightness_candelas": 65,
+      "brightnessscale": 1,
+      "range": 200,
+      "enabled": true,
+      "inner_angle": 60.200001,
+      "outer_angle": 88
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -116,
+        -592.506226,
+        352
+      ],
+      "angles": [
+        90,
+        0,
+        0
+      ],
+      "color": [
+        255,
+        182,
+        119
+      ],
+      "brightness": 2.19922,
+      "brightness_lumens": 1000,
+      "brightness_candelas": 366,
+      "brightnessscale": 1,
+      "range": 256,
+      "enabled": true,
+      "inner_angle": 29.799999,
+      "outer_angle": 74.800003
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -394.858551,
+        -616.392395,
+        300.914703
+      ],
+      "angles": [
+        90,
+        0,
+        0
+      ],
+      "color": [
+        194,
+        213,
+        255
+      ],
+      "brightness": 0.203125,
+      "brightness_lumens": 300,
+      "brightness_candelas": 92,
+      "brightnessscale": 1,
+      "range": 233.167999,
+      "enabled": true,
+      "inner_angle": 43.700001,
+      "outer_angle": 76.5
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -394.858612,
+        -616.392395,
+        292.000031
+      ],
+      "angles": [
+        -89.999992,
+        0,
+        0
+      ],
+      "color": [
+        194,
+        213,
+        255
+      ],
+      "brightness": -3.70703,
+      "brightness_lumens": 20,
+      "brightness_candelas": 6,
+      "brightnessscale": 1,
+      "range": 32,
+      "enabled": true,
+      "inner_angle": 43.700001,
+      "outer_angle": 76.5
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        179.68042,
+        -456,
+        254.825409
+      ],
+      "angles": [
+        89.999977,
+        0,
+        0
+      ],
+      "color": [
+        213,
+        225,
+        255
+      ],
+      "brightness": 0.148438,
+      "brightness_lumens": 450,
+      "brightness_candelas": 88,
+      "brightnessscale": 1,
+      "range": 350,
+      "enabled": true,
+      "inner_angle": 70,
+      "outer_angle": 88
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        179.68042,
+        -438.68103,
+        262.961792
+      ],
+      "angles": [
+        89.999977,
+        0,
+        0
+      ],
+      "color": [
+        255,
+        253,
+        249
+      ],
+      "brightness": -7.64453,
+      "brightness_lumens": 5,
+      "brightness_candelas": 0,
+      "brightnessscale": 1,
+      "range": 16,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        179.68042,
+        -473.28714,
+        262.961792
+      ],
+      "angles": [
+        89.999977,
+        0,
+        0
+      ],
+      "color": [
+        255,
+        253,
+        249
+      ],
+      "brightness": -7.64453,
+      "brightness_lumens": 5,
+      "brightness_candelas": 0,
+      "brightnessscale": 1,
+      "range": 16,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        179.68042,
+        -456,
+        259.55191
+      ],
+      "angles": [
+        89.999977,
+        0,
+        0
+      ],
+      "color": [
+        255,
+        253,
+        249
+      ],
+      "brightness": -7.64453,
+      "brightness_lumens": 5,
+      "brightness_candelas": 0,
+      "brightnessscale": 1,
+      "range": 16,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -60.31958,
+        -456,
+        350.190369
+      ],
+      "angles": [
+        89.999977,
+        0,
+        0
+      ],
+      "color": [
+        213,
+        225,
+        255
+      ],
+      "brightness": 0.148438,
+      "brightness_lumens": 450,
+      "brightness_candelas": 88,
+      "brightnessscale": 1,
+      "range": 350,
+      "enabled": true,
+      "inner_angle": 70,
+      "outer_angle": 88
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -60.31958,
+        -438.68103,
+        358.326752
+      ],
+      "angles": [
+        89.999977,
+        0,
+        0
+      ],
+      "color": [
+        255,
+        253,
+        249
+      ],
+      "brightness": -7.64453,
+      "brightness_lumens": 5,
+      "brightness_candelas": 0,
+      "brightnessscale": 1,
+      "range": 16,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -60.31958,
+        -473.28714,
+        358.326752
+      ],
+      "angles": [
+        89.999977,
+        0,
+        0
+      ],
+      "color": [
+        255,
+        253,
+        249
+      ],
+      "brightness": -7.64453,
+      "brightness_lumens": 5,
+      "brightness_candelas": 0,
+      "brightnessscale": 1,
+      "range": 16,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -60.31958,
+        -456,
+        354.91687
+      ],
+      "angles": [
+        89.999977,
+        0,
+        0
+      ],
+      "color": [
+        255,
+        253,
+        249
+      ],
+      "brightness": -7.64453,
+      "brightness_lumens": 5,
+      "brightness_candelas": 0,
+      "brightnessscale": 1,
+      "range": 16,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -454.471619,
+        -791.513184,
+        260.943207
+      ],
+      "angles": [
+        0.500415,
+        354.758972,
+        5.438875
+      ],
+      "color": [
+        215,
+        226,
+        255
+      ],
+      "brightness": -2.73828,
+      "brightness_lumens": 150,
+      "brightness_candelas": 12,
+      "brightnessscale": 1,
+      "range": 124.346001,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -469.409973,
+        -904.689636,
+        248.130707
+      ],
+      "angles": [
+        1.070503,
+        346.341583,
+        4.396368
+      ],
+      "color": [
+        215,
+        226,
+        255
+      ],
+      "brightness": -2.73828,
+      "brightness_lumens": 150,
+      "brightness_candelas": 12,
+      "brightnessscale": 1,
+      "range": 124.346001,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        -520.721741,
+        -1083.691772,
+        244.186249
+      ],
+      "angles": [
+        0,
+        341.340851,
+        0
+      ],
+      "color": [
+        215,
+        226,
+        255
+      ],
+      "brightness": -2.73828,
+      "brightness_lumens": 150,
+      "brightness_candelas": 12,
+      "brightnessscale": 1,
+      "range": 124.346001,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        288,
+        360,
+        67.808533
+      ],
+      "angles": [
+        89.999954,
+        270,
+        0
+      ],
+      "color": [
+        193,
+        213,
+        255
+      ],
+      "brightness": -1.73828,
+      "brightness_lumens": 300,
+      "brightness_candelas": 24,
+      "brightnessscale": 1,
+      "range": 300,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        288,
+        248.361008,
+        68.24852
+      ],
+      "angles": [
+        89.999985,
+        270,
+        0
+      ],
+      "color": [
+        193,
+        213,
+        255
+      ],
+      "brightness": -2.32031,
+      "brightness_lumens": 200,
+      "brightness_candelas": 16,
+      "brightnessscale": 1,
+      "range": 300,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        288.416809,
+        484.95105,
+        48.294804
+      ],
+      "angles": [
+        -11.082593,
+        128.746643,
+        163.964722
+      ],
+      "color": [
+        255,
+        190,
+        136
+      ],
+      "brightness": -2.32031,
+      "brightness_lumens": 200,
+      "brightness_candelas": 16,
+      "brightnessscale": 1,
+      "range": 250,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        274.881622,
+        462.023804,
+        48.979038
+      ],
+      "angles": [
+        0.604773,
+        143.262894,
+        -169.366669
+      ],
+      "color": [
+        255,
+        190,
+        136
+      ],
+      "brightness": -3.32031,
+      "brightness_lumens": 100,
+      "brightness_candelas": 8,
+      "brightnessscale": 1,
+      "range": 250,
+      "enabled": true,
+      "inner_angle": 180,
+      "outer_angle": 180
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        415.818451,
+        1307.223877,
+        241.193741
+      ],
+      "angles": [
+        89.999962,
+        0,
+        0
+      ],
+      "color": [
+        202,
+        218,
+        255
+      ],
+      "brightness": 0.914062,
+      "brightness_lumens": 700,
+      "brightness_candelas": 150,
+      "brightnessscale": 1,
+      "range": 289.152008,
+      "enabled": true,
+      "inner_angle": 70,
+      "outer_angle": 80
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        607.274048,
+        1304.066284,
+        241.193741
+      ],
+      "angles": [
+        89.999962,
+        0,
+        0
+      ],
+      "color": [
+        202,
+        218,
+        255
+      ],
+      "brightness": 0.914062,
+      "brightness_lumens": 700,
+      "brightness_candelas": 150,
+      "brightnessscale": 1,
+      "range": 289.152008,
+      "enabled": true,
+      "inner_angle": 70,
+      "outer_angle": 80
+    },
+    {
+      "classname": "light_omni2",
+      "origin": [
+        264.469086,
+        1303.726074,
+        253.774445
+      ],
+      "angles": [
+        89.999962,
+        0,
+        0
+      ],
+      "color": [
+        202,
+        218,
+        255
+      ],
+      "brightness": 0.914062,
+      "brightness_lumens": 700,
+      "brightness_candelas": 150,
+      "brightnessscale": 1,
+      "range": 289.152008,
+      "enabled": true,
+      "inner_angle": 70,
+      "outer_angle": 80
+    },
+    {
+      "classname": "env_sky",
+      "targetname": "[PR#]13276_MAT_sky",
+      "origin": [
+        11.374939,
+        -122.499939,
+        134.18898
+      ],
+      "angles": [
+        0,
+        244.999985,
+        0
+      ],
+      "brightnessscale": 0.5,
+      "startdisabled": false,
+      "skyname": "resource_name:\"materials/skybox/test/s2_de_inferno_sky01.vmat\""
+    },
+    {
+      "classname": "env_sky",
+      "targetname": "[PR#]13276_LIGHT_sky",
+      "origin": [
+        16.561401,
+        -75.181946,
+        130.18898
+      ],
+      "angles": [
+        0,
+        39.999985,
+        0
+      ],
+      "brightnessscale": 2,
+      "startdisabled": true,
+      "skyname": "resource_name:\"materials/skybox/skymodel_hosekwilkie_ref/skymodel_hosekwilkie_albedo_0_30_turbidity_02_0_elevation_65_0.vmat\""
+    },
+    {
+      "classname": "light_environment",
+      "origin": [
+        3.888428,
+        -53.930786,
+        146.18898
+      ],
+      "angles": [
+        62.999996,
+        218,
+        0
+      ],
+      "color": [
+        255,
+        247,
+        235
+      ],
+      "brightness": 3,
+      "brightness_lumens": "0",
+      "brightnessscale": 1,
+      "enabled": true,
+      "skycolor": [
+        136,
+        199,
+        255
+      ],
+      "skyintensity": 0.875,
+      "angulardiameter": 0.3
+    }
+  ]
+}
