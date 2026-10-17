@@ -104,6 +104,7 @@ def select_region(nav, source, folder):
     areas={a["id"]:a for a in nav["areas"] if a["hull"]==0 and a["movable"]==0xffffffff}
     blocked={key for key,a in areas.items() if any(overlap(bounds(a["corners"]),b["bounds"]) for b in blockers)}
     eligible={key:a for key,a in areas.items() if key not in blocked}
+    print('BLOCKER_DIAGNOSTICS',json.dumps({'blockers':blockers,'eligible':len(eligible),'blocked':len(blocked)}))
     seeds=[]
     for entity in source["entities"]:
         if not entity["classname"].startswith("info_player_"):
@@ -111,7 +112,23 @@ def select_region(nav, source, folder):
         p=entity["origin"]
         candidates=[a for a in eligible.values() if contains_xy(p,a["corners"])]
         if not candidates:
-            raise ValueError("Original spawn does not lie in unblocked navigation: "+str(p))
+            def distance(area):
+                best=float("inf")
+                poly=area["corners"]
+                for a,b in zip(poly,poly[1:]+poly[:1]):
+                    dx,dy=b[0]-a[0],b[1]-a[1]
+                    length=dx*dx+dy*dy
+                    t=max(0,min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dy)/length)) if length else 0
+                    best=min(best,math.hypot(p[0]-a[0]-t*dx,p[1]-a[1]-t*dy))
+                vertical=abs(sum(c[2] for c in poly)/len(poly)-p[2])
+                return best,vertical
+            nearby=sorted(eligible.values(),key=lambda a:(distance(a)[0]+distance(a)[1]*.05))
+            print("SPAWN_NAV_DIAGNOSTICS",json.dumps({"spawn":p,"nearest":[
+                {"id":a["id"],"distance":distance(a),"bounds":bounds(a["corners"])}
+                for a in nearby[:3]]}))
+            if not nearby or distance(nearby[0])[0]>64 or distance(nearby[0])[1]>128:
+                raise ValueError("Original spawn is too far from unblocked navigation: "+str(p))
+            candidates=[nearby[0]]
         selected=min(candidates,key=lambda a:abs(sum(c[2] for c in a["corners"])/len(a["corners"])-p[2]))
         seeds.append(selected["id"])
     if len(seeds)!=8:
