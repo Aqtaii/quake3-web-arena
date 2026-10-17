@@ -139,7 +139,7 @@ jobs:
           mkdir -p region-tools reports/blockers
           for name in wingman_region.py wingman-source.json; do
             curl --fail --location --proto '=https' --tlsv1.2 \
-              "https://raw.githubusercontent.com/Aqtaii/quake3-web-arena/5174d6fa3830de0a9b9e8f44ad8d2a58cae1c055/tools/inferno/$name" \
+              "https://raw.githubusercontent.com/Aqtaii/quake3-web-arena/987bde1a7287420fd40f62e6f8b842b7bc938188/tools/inferno/$name" \
               -o "region-tools/$name"
           done
           paths=$(python3 - <<'PY'
