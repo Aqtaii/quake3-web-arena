@@ -17,11 +17,12 @@ jobs:
           COMMIT: ${{ github.sha }}
         run: |
           set -euo pipefail
-          for file in audit_export.py resolve_assets.py wingman-source.json; do
+          for file in audit_export.py resolve_assets.py wingman-source.json textures.mjs; do
             curl --fail --location --proto '=https' --tlsv1.2 \
               "https://raw.githubusercontent.com/Aqtaii/quake3-web-arena/$COMMIT/tools/inferno/$file" -o "$file"
           done
           python3 -m py_compile audit_export.py resolve_assets.py
+          node --check textures.mjs
       - name: Check binary parsing and corrupted export rejection
         shell: bash
         run: |
@@ -75,4 +76,32 @@ jobs:
               except ValueError: pass
               else: raise AssertionError("Texture path escaped export root")
           print("PASS: VPK parsing, CRC metadata, corrupt VPK rejection, path containment, accessor bounds, truncated buffer detection and 8 original Wingman spawns")
+          PY
+      - name: Verify browser-based texture conversion
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, pathlib, struct, zlib
+          root = pathlib.Path("texture-test")
+          root.mkdir()
+          def chunk(kind, data):
+              return struct.pack(">I",len(data))+kind+data+struct.pack(">I",zlib.crc32(kind+data))
+          png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR",struct.pack(">IIBBBBB",2,1,8,6,0,0,0))
+          png += chunk(b"IDAT",zlib.compress(b"\0\xff\0\0\xff\0\xff\0\x40")) + chunk(b"IEND",b"")
+          (root/"source.png").write_bytes(png)
+          jobs = [{"input":"source.png","output":"mask.tga","factor":[1,1,1,1],"alphaMode":"MASK","alphaCutoff":.5},
+                  {"input":None,"output":"factor.tga","factor":[.5,.5,.5,.25],"alphaMode":"BLEND"}]
+          (root/"jobs.json").write_text(json.dumps(jobs))
+          PY
+          node textures.mjs texture-test texture-test/jobs.json texture-test/output
+          python3 - <<'PY'
+          import pathlib, struct
+          root=pathlib.Path("texture-test/output")
+          mask=(root/"mask.tga").read_bytes()
+          assert struct.unpack_from("<HH",mask,12)==(2,1)
+          assert list(mask[18:22])==[0,0,255,255]
+          assert mask[25]==0
+          factor=(root/"factor.tga").read_bytes()
+          assert list(factor[18:22])==[188,188,188,64]
+          print("PASS: real browser PNG decoding, Quake TGA channel order, alpha mask and linear material tint")
           PY
