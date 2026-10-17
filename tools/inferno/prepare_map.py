@@ -242,7 +242,7 @@ def main():
         jobs.append({"input":input_path,"output":name+extension,
                      "factor":pbr.get("baseColorFactor",[1,1,1,1]),"alphaMode":alpha,
                      "alphaCutoff":material.get("alphaCutoff",.5)})
-        lines=[name,"{","q3map_shadeAngle 60","surfaceparm nonsolid"]
+        lines=[name,"{","q3map_shadeAngle 60","surfaceparm nonsolid","surfaceparm nolightmap"]
         if material.get("doubleSided",False):lines.append("cull disable")
         if alpha=="BLEND":lines.append("sort banner")
         lines+=["{","map "+name+extension,"rgbGen vertex","alphaGen identity" if alpha=="OPAQUE" else "alphaGen vertex"]
