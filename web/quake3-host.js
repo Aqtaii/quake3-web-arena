@@ -2042,7 +2042,7 @@
             modelLobby?.addEventListener('change', onModelSelect);
 
             const cmdline =
-                '+set sv_pure 0 +set vm_game 0 +set vm_cgame 0 +set vm_ui 0 ' +
+                '+set com_hunkMegs 160 +set sv_pure 0 +set vm_game 0 +set vm_cgame 0 +set vm_ui 0 ' +
                 `+set r_mode -1 +set r_customwidth ${targetWidth} +set r_customheight ${targetHeight} ` +
                 '+set r_fullscreen 0 +set in_mouse 1 +set bot_enable 1 ' +
                 '+set com_maxfps 125 +set r_finish 0 +set r_swapInterval 0 ' +

@@ -1,0 +1,155 @@
+name: Compile and Playtest Inferno Recovery Candidate
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  compile-and-playtest:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Fetch repository files
+        env:
+          COMMIT: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p server web/baseq3 tools/inferno reports
+          for path in server/engine.mjs server/server.mjs server/game-data.mjs web/index.html web/lava.js web/network.js web/pk3.js web/quake3-host.js web/showroom.js web/lobby.js tools/inferno/playtest.mjs tools/inferno/wingman_region.py tools/inferno/repair_prepared.py web/game-data.json web/quake3.wasm web/baseq3/pak0.pk3 web/baseq3/pak1.pk3 web/baseq3/pak9.pk3; do
+            curl --fail --location --retry 3 "https://raw.githubusercontent.com/Aqtaii/quake3-web-arena/$COMMIT/$path" -o "$path"
+          done
+
+      - name: Download preserved inferno-prepared-recovery artifact
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p quake/baseq3
+          curl --fail --location --retry 3 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/Aqtaii/quake3-web-arena/actions/artifacts/12100659155/zip" \
+            -o recovery.zip
+          unzip -q recovery.zip -d quake/baseq3
+          rm -f recovery.zip
+          ls -lh quake/baseq3/models/inferno/
+
+      - name: Repair geometry, walkable collision, shaders and textures
+        run: |
+          set -euo pipefail
+          PYTHONPATH=tools/inferno python3 tools/inferno/repair_prepared.py quake/baseq3 | tee reports/repair.log
+
+      - name: Extract q3map2 compiler without running AppImage
+        run: |
+          set -euo pipefail
+          mkdir -p tools/compiler
+          curl --fail --location --retry 3 --proto '=https' --tlsv1.2 \
+            https://github.com/Garux/netradiant-custom/releases/download/20260114/netradiant-custom-20260114-linux-x86_64.7z \
+            -o tools/compiler.7z
+          echo 'f48f6f1d0db2b910ef9cb5dc5d8a722852510f3c5c278dc17615c0466b8a7a3d  tools/compiler.7z' | sha256sum --check
+          7z x -y -otools/compiler tools/compiler.7z > reports/extract.log
+          python3 - <<'PY'
+          import pathlib, struct
+          for path in pathlib.Path("tools/compiler").rglob("*"):
+              if path.is_file() and path.suffix.lower() == ".appimage":
+                  data = path.read_bytes()
+                  offset = data.find(b"hsqs")
+                  while offset >= 0:
+                      if len(data) > offset + 96 and struct.unpack_from("<H", data, offset + 28)[0] == 4:
+                          pathlib.Path("tools/compiler.squashfs").write_bytes(data[offset:])
+                          break
+                      offset = data.find(b"hsqs", offset + 1)
+                  break
+          PY
+          unsquashfs -d tools/compiler/image tools/compiler.squashfs >> reports/extract.log
+          compiler=$(find tools/compiler -type f \( -name q3map2 -o -name q3map2.x86_64 \) | head -n 1)
+          chmod +x "$compiler"
+          printf '%s\n' "$compiler" > reports/compiler-path.txt
+
+      - name: Compile repaired geometry into Quake BSP
+        run: |
+          set -euo pipefail
+          compiler=$(cat reports/compiler-path.txt)
+          map="$PWD/quake/baseq3/maps/inferno_wingman.map"
+          timeout 1800 "$compiler" -game quake3 -fs_basepath "$PWD/quake" -maxmapdrawsurfs 262144 -meta "$map" > reports/bsp.log 2>&1 || { tail -n 120 reports/bsp.log; exit 1; }
+          tail -n 40 reports/bsp.log
+          timeout 600 "$compiler" -game quake3 -fs_basepath "$PWD/quake" -vis -fast "$map" > reports/vis.log 2>&1 || { tail -n 100 reports/vis.log; exit 1; }
+          timeout 1800 "$compiler" -game quake3 -fs_basepath "$PWD/quake" -light -fast "$map" > reports/light.log 2>&1 || { tail -n 100 reports/light.log; exit 1; }
+          tail -n 40 reports/light.log
+
+      - name: Validate and package candidate PK3 files
+        run: |
+          python3 - <<'PY'
+          import pathlib, struct, json, zipfile, hashlib
+          root=pathlib.Path("quake/baseq3")
+          data=(root/"maps/inferno_wingman.bsp").read_bytes()
+          assert data[:4]==b"IBSP" and struct.unpack_from("<I",data,4)[0]==46
+          lumps=[struct.unpack_from("<II",data,8+i*8) for i in range(17)]
+          assert all(o>=0 and n>=0 and o+n<=len(data) for o,n in lumps)
+          off,length=lumps[13]
+          assert length%104==0
+          surfaces=[struct.unpack_from("<26i",data,off+i) for i in range(0,length,104)]
+          assert surfaces and max(s[4] for s in surfaces)<1000, f"Quake tess vertex limit exceeded: {max(s[4] for s in surfaces)}"
+          assert max(s[6] for s in surfaces)<6000, f"Quake tess index limit exceeded: {max(s[6] for s in surfaces)}"
+          assert lumps[8][1]>0, "No collision brushes"
+          entities=data[lumps[0][0]:sum(lumps[0])].decode()
+          assert entities.count('"info_player_deathmatch"')==8
+          out=pathlib.Path("candidate");out.mkdir()
+          packs=[]
+          groups=[[root/"maps/inferno_wingman.bsp",root/"scripts/inferno.shader"]]
+          current=[];size=0
+          for path in sorted((root/"textures").rglob("*")):
+              if not path.is_file():continue
+              if current and size+path.stat().st_size>40*1024*1024:
+                  groups.append(current);current=[];size=0
+              current.append(path);size+=path.stat().st_size
+          if current:groups.append(current)
+          for i,group in enumerate(groups):
+              path=out/("inferno-map.pk3" if i==0 else "inferno-textures-%02d.pk3"%i)
+              with zipfile.ZipFile(path,"w",zipfile.ZIP_DEFLATED,compresslevel=6) as z:
+                  for p in group:z.write(p,p.relative_to(root).as_posix())
+              packs.append({"file":path.name,"bytes":path.stat().st_size,"sha256":hashlib.sha256(path.read_bytes()).hexdigest()})
+          report={"bsp_bytes":len(data),"surfaces":len(surfaces),"max_surface_verts":max(s[4] for s in surfaces),"max_surface_indexes":max(s[6] for s in surfaces),"collision_brushes":lumps[8][1]//12,"packs":packs,"runtime_tested":False}
+          (out/"candidate.json").write_text(json.dumps(report,indent=2))
+          pathlib.Path("reports/candidate.json").write_text(json.dumps(report,indent=2))
+          print(json.dumps(report,indent=2))
+          PY
+
+      - name: Install candidate PK3s and run two-browser playtest on inferno_wingman
+        run: |
+          set -euo pipefail
+          cp candidate/*.pk3 web/baseq3/
+          python3 - <<'PY'
+          import json, pathlib
+          cand = json.loads(pathlib.Path("candidate/candidate.json").read_text())
+          pack_names = [p["file"] for p in cand["packs"]]
+          manifest_path = pathlib.Path("web/game-data.json")
+          manifest = json.loads(manifest_path.read_text())
+          base_packs = [p["file"] if isinstance(p, dict) else p for p in manifest["packages"]]
+          manifest["packages"] = base_packs + pack_names
+          manifest["serverPackages"] = base_packs + ["inferno-map.pk3"]
+          manifest["maps"] = ["q3dm1", "q3dm7", "q3dm17", "q3tourney2", "inferno_wingman"]
+          manifest_path.write_text(json.dumps(manifest, indent=2) + "
+")
+          print("Updated test manifest:", json.dumps(manifest, indent=2))
+          PY
+          node tools/inferno/playtest.mjs . inferno_wingman reports
+
+      - name: Upload compiled candidate PK3s
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: inferno-compiled-candidate
+          path: candidate/
+          compression-level: 0
+          if-no-files-found: ignore
+          retention-days: 5
+
+      - name: Upload runtime reports and screenshots
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: inferno-runtime-report
+          path: reports/
+          if-no-files-found: ignore
+          retention-days: 5

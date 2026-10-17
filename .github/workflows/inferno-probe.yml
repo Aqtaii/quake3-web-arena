@@ -173,13 +173,14 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p importer quake/baseq3
-          for file in prepare_map.py wingman_region.py wingman-source.json region-source.json lighting-source.json textures.mjs; do
+          for file in prepare_map.py repair_prepared.py wingman_region.py wingman-source.json region-source.json lighting-source.json textures.mjs; do
             curl --fail --location --retry 3 "https://raw.githubusercontent.com/Aqtaii/quake3-web-arena/${{ github.sha }}/tools/inferno/$file" -o "importer/$file"
           done
           python3 importer/prepare_map.py exported quake/baseq3 importer > reports/preparation.log 2>&1 || { tail -n 100 reports/preparation.log; exit 1; }
           cat reports/preparation.log
           node importer/textures.mjs exported quake/baseq3/texture-jobs.json quake/baseq3 > reports/textures.log 2>&1 || { tail -n 100 reports/textures.log; exit 1; }
           tail -n 10 reports/textures.log
+          PYTHONPATH=importer python3 importer/repair_prepared.py quake/baseq3
           cp quake/baseq3/preparation-report.json reports/
       - name: Verify and inspect maintained Quake map compiler
         shell: bash
@@ -236,7 +237,7 @@ jobs:
           set -euo pipefail
           compiler=$(cat reports/compiler-path.txt)
           map="$PWD/quake/baseq3/maps/inferno_wingman.map"
-          timeout 1800 "$compiler" -game quake3 -fs_basepath "$PWD/quake" -meta "$map" > reports/bsp.log 2>&1 || { tail -n 100 reports/bsp.log; exit 1; }
+          timeout 1800 "$compiler" -game quake3 -fs_basepath "$PWD/quake" -maxmapdrawsurfs 262144 -meta "$map" > reports/bsp.log 2>&1 || { tail -n 100 reports/bsp.log; exit 1; }
           tail -n 35 reports/bsp.log
           timeout 600 "$compiler" -game quake3 -fs_basepath "$PWD/quake" -vis -fast "$map" > reports/vis.log 2>&1 || { tail -n 100 reports/vis.log; exit 1; }
           timeout 1800 "$compiler" -game quake3 -fs_basepath "$PWD/quake" -light -fast -samples 2 "$map" > reports/light.log 2>&1 || { tail -n 100 reports/light.log; exit 1; }
