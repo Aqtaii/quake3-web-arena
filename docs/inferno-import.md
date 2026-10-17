@@ -1,112 +1,98 @@
-# Inferno import: status and acceptance criteria
+# Genuine Inferno Wingman import
 
-Work happens on `codex/inferno-import`. The live game and `main` are unchanged.
+Development branch: codex/inferno-import. Main and the deployed game remain unchanged.
+The map is not advertised to players until a compiled package passes runtime checks.
 
-## Verified acquisition
+## Verified source
 
-GitHub Actions run [39026226707](https://github.com/Aqtaii/quake3-web-arena/actions/runs/39026226707)
-successfully retrieved the current official `game/csgo/maps/de_inferno.vpk`
-and `game/csgo/gameinfo.gi` directly from Steam content servers.
+Official Steam app 730, depot 2347770, manifest 2520908610273941189
+(2026-10-15 17:23:21). Anonymous acquisition works without user credentials.
+Only Inferno and the shared archive chunks needed by its dependencies are requested.
+All acquisition, conversion and testing execute on GitHub-hosted cloud runners.
+No project is cloned or downloaded to the user's computer.
 
-- App: 730; depot: 2347770; public manifest: 2520908610273941189.
-- Manifest timestamp reported by Steam: 2026-10-15 17:23:21.
-- Anonymous access succeeded. No Steam password, session token or account was supplied.
-- Exactly the two requested files were downloaded, not the entire CS2 installation.
-- Downloads and tool execution take place on an ephemeral GitHub-hosted Ubuntu runner.
-  This workflow does not clone or download the project to the user's computer.
+[Complete textured export](https://github.com/Aqtaii/quake3-web-arena/actions/runs/39027347591):
 
-The workflow records source file sizes, SHA-256 hashes and VPK headers.
-It uploads diagnostic reports only, not a playable map.
-SteamRE DepotDownloader 3.4.0 is pinned to a release URL.
-Source 2 Viewer 20.1 is pinned and its archive checked against the release SHA-256.
+- Render: 6,754 meshes, 7,131 nodes, 8,486,377 triangles, 923 materials, 869 images.
+- Physics: 591 meshes, 74,467 triangles.
+- No missing required source assets, missing output images or invalid buffer ranges.
+- Requested archive resources were checked against their original VPK CRC32.
+- This validates source extraction, not Quake playability.
 
-## Verified geometry and Wingman metadata
+## Verified Wingman region
 
-[Run 39026304781](https://github.com/Aqtaii/quake3-web-arena/actions/runs/39026304781)
-exported 6,641 render meshes and a separate 92-mesh physics document.
-The initial render export had no materials or images because the shared CS2 packages
-had not yet been resolved. A successful exporter exit code alone is not completeness.
+[Region validation](https://github.com/Aqtaii/quake3-web-arena/actions/runs/39029313061)
+found 806 reachable areas of the original 2,738-area NAV, using five original
+Wingman navigation blockers and all eight original spawn placements.
 
-[Run 39026746105](https://github.com/Aqtaii/quake3-web-arena/actions/runs/39026746105)
-identified 48 original Wingman-related entities, including four terrorist and four
-counterterrorist spawn placements. Their original coordinates and models are recorded
-in `tools/inferno/wingman-source.json`.
+Playable NAV bounds in original Source units:
+(511.99997, -762.50018, 79.99993) to (2661.5, 1538.49988, 301.99991).
 
-These metadata are not a playable map. In particular, `func_nav_blocker` changes
-bot navigation and must not be converted directly into a solid player wall.
+Four T spawns lie slightly outside the baked full-map NAV. Flood-fill seeds use
+their measured nearest walkable area within a bounded 128-unit search; the original
+spawn coordinates are retained. Navigation blockers are never treated as player walls.
 
-The dependency resolver reads official VPK indexes, requests required archive chunks
-in bounded groups of eight, extracts requested resources, checks their VPK CRC32 and
-removes each chunk afterward. Dependencies use the same pinned Steam manifest. The export auditor checks geometry counts, buffer bounds and
-missing resource references. Both run on the GitHub runner, with no local project clone.
+Metadata live in wingman-source.json, region-source.json and lighting-source.json.
 
-[Run 39026500094](https://github.com/Aqtaii/quake3-web-arena/actions/runs/39026500094)
-successfully extracted 420 requested resources from 86 official chunks, with none
-missing from the package indexes. Its next texture pass required 152 chunks and hit
-the original 100-chunk diagnostic limit. This was not a complete textured export.
-The pipeline now allows up to 256 groups and batches requests to reduce repeated
-Steam connections while keeping temporary disk use bounded.
+## Conversion and current candidate
 
-[Import tool checks](https://github.com/Aqtaii/quake3-web-arena/actions/runs/39027165925)
-passed binary VPK parsing, corrupt archive/path rejection, accessor bounds,
-truncated-buffer detection and the original eight Wingman spawn placements.
+The pipeline crops actual source triangles to a context around the verified region.
+It copies retained vertex attributes, preserves scene transforms and compacts buffers.
+Source physics is separate from visible geometry; triggers and nav volumes are excluded.
 
-## Conversion stages still required
+[Native glTF-to-BSP fixture](https://github.com/Aqtaii/quake3-web-arena/actions/runs/39028636751)
+verified BSP version 46 and exact source axes/units. q3map2's Assimp conversion is
+compensated by misc_model angles "0 90 0" and modelscale 39.37007874015748.
 
-1. Export the real map geometry, material references and physics from the official VPK.
-2. Resolve shared CS2 assets from official Steam depots. Missing assets must be reported,
-   rather than silently replaced with unrelated Quake textures.
-3. Identify the actual Wingman play area and original placements from map entities.
-   Keep source coordinates and record the conversion of axes and scale.
-4. Convert render surfaces and collision to Quake III BSP version 46.
-   A glTF preview alone is not a playable Quake map.
-5. Adapt materials to the existing WebGL renderer and bake suitable lighting.
-6. Package the result as a PK3, with a reproducible source manifest.
-7. Register the installed map in the browser lobby and the dedicated WASM server together.
-8. Test two clients in the same room, spawn clearance, stairs, walls, projectiles,
-   map boundaries, visual completeness and memory use.
+Texture conversion uses existing cloud Chrome Canvas and own Node code, with no npm
+packages. Opaque images become quality-98 JPEG; alpha images become 32-bit TGA.
+Original base-colour factors are applied in linear colour space.
 
-Do not expose an Inferno option until the BSP and required assets are actually packaged.
-Do not label a recreated layout or a textureless third-party model as the original map.
-Do not use `de_inferno_vanity`, which is a menu-background variant.
+The build workflow now prepares real geometry/textures, compiles BSP/PVS/lighting,
+checks Quake surface limits and collision/spawn data, and retains candidate PK3 files.
+A candidate artifact alone is not a tested or deployed map.
 
-## Reproduce the acquisition probe
+Current prototype limitations:
 
-The workflow runs when its file changes on this branch. Its reports are visible in the
-GitHub Actions run summary and the `inferno-acquisition-report` artifact.
-When merged into the default branch it can also be started manually.
-The workflow has read-only repository permissions and does not deploy or commit generated files.
+- Source 2 PBR/HDR lighting is adapted to Quake vertex lighting.
+- The sky is currently a colour placeholder; the original cubemap needs conversion.
+- Grenade-only clip filters have no identical stock Quake contents bit.
+- Source props are static and Source 2 entity logic is not executed.
+- Quake spawn Z is offset by 24 units for its player bounding box.
+- Collision boundaries, spawn clearance, textures, memory and frame rate require real-map testing.
+
+The lobby and dedicated server now read the installed-map catalog from game-data.json.
+The server can load a map-only package without caching client texture packs.
+The manifest still contains only the four installed original Quake maps.
+
+## Validation
+
+Import tests verify VPK parsing/CRC metadata, corrupt input rejection, path containment,
+glTF bounds, source spawn counts, browser PNG-to-TGA conversion and exact retained
+vertex bytes. Dedicated-server tests pass original WASM map startup, API catalog,
+uninstalled map rejection, room capacity and owner deletion.
+
+playtest.mjs drives two actual WASM clients in existing cloud Chrome, checks replicated
+players, standing/walking collision and browser exceptions, and saves screenshots/logs.
+
+Before enabling Inferno, validate the actual candidate with that harness and visually
+inspect it. No recreated layout, unrelated Quake textures or vanity map is substituted.
+
+## Pinned tools
+
+- SteamRE DepotDownloader 3.4.0, official maintainer release.
+- Source 2 Viewer 20.1; archive SHA-256:
+  29d25a6d6b62377fc5386c3e5145b0a2180a401a50041afe9494b3f503deaef5.
+- NetRadiant Custom 20260114; archive SHA-256:
+  f48f6f1d0db2b910ef9cb5dc5d8a722852510f3c5c278dc17615c0466b8a7a3d.
+
+The compiler was extracted from the AppImage's SquashFS without running the AppImage
+launcher. Only q3map2 itself was executed. No game executable or installer was run.
+The user explicitly authorized GitHub storage of converted assets for testing/integration.
 
 References:
+
 - [SteamRE DepotDownloader](https://github.com/SteamRE/DepotDownloader)
-- [Source 2 Viewer map export](https://s2v.app/ValveResourceFormat/guides/exporting-maps.html)
 - [Source 2 Viewer CLI](https://s2v.app/ValveResourceFormat/guides/command-line.html)
-
-Source 2 export does not preserve the original lighting or game logic automatically.
-Asset redistribution permissions must be assessed before publishing Valve assets as a web download.
-
-## Conversion implementation notes
-
-Use an established Quake map compiler for the final BSP rather than treating a
-glTF mesh as if the Quake collision loader could read it directly.
-
-The maintained [q3map2 model compiler](https://github.com/Garux/netradiant-custom/blob/master/tools/quake3/q3map2/model.cpp)
-supports static model surfaces and generated collision brushes. Its `misc_model`
-clip-model flag is bit 1 (value 2); the renderer geometry and the original physics
-geometry must be handled separately. Source trigger and navigation volumes are
-not ordinary solid walls. Preserve player-only and projectile-only clip categories.
-
-The official-maintainer NetRadiant Custom Linux release researched for this purpose
-is `20260114`, archive `netradiant-custom-20260114-linux-x86_64.7z`,
-SHA-256 `f48f6f1d0db2b910ef9cb5dc5d8a722852510f3c5c278dc17615c0466b8a7a3d`.
-It has not been downloaded or executed by this pipeline yet.
-
-Source 2 Viewer 20.1 bakes its coordinate conversion into vertices. Its implementation
-uses scale 0.0254 and a quaternion with yaw 0, pitch -pi/2, roll -pi/2.
-Apply the inverse of the exact conversion after glTF node placement transforms;
-do not guess an axis swap or rescale already converted vertices twice.
-See [the pinned conversion implementation](https://github.com/ValveResourceFormat/ValveResourceFormat/blob/20.1/ValveResourceFormat/IO/GltfModelExporter.Conversion.cs).
-
-The current Quake image loaders and material pipeline also need compatible texture
-outputs and shader definitions. Source 2 PBR materials and baked lighting are not
-preserved automatically by the glTF export or by q3map2.
+- [Source 2 Viewer map export](https://s2v.app/ValveResourceFormat/guides/exporting-maps.html)
+- [q3map2 model importer](https://github.com/Garux/netradiant-custom/blob/master/tools/quake3/q3map2/model.cpp)
