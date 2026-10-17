@@ -16,7 +16,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p server web/baseq3 tools/inferno
-          for path in server/engine.mjs server/server.mjs server/game-data.mjs web/index.html web/lava.js web/network.js web/pk3.js web/quake3-host.js web/showroom.js web/lobby.js tools/inferno/playtest.mjs web/game-data.json web/quake3.wasm web/baseq3/pak0.pk3 web/baseq3/pak1.pk3 web/baseq3/pak9.pk3; do
+          for path in server/engine.mjs server/server.mjs server/game-data.mjs web/index.html web/lava.js web/network.js web/pk3.js web/quake3-host.js web/showroom.js web/lobby.js tools/inferno/playtest.mjs web/game-data.json web/quake3.wasm web/baseq3/pak0.pk3 web/baseq3/pak1.pk3 web/baseq3/pak9.pk3 web/baseq3/inferno-map.pk3 web/baseq3/inferno-textures-01.pk3; do
             curl --fail --location --retry 3 "https://raw.githubusercontent.com/Aqtaii/quake3-web-arena/$COMMIT/$path" -o "$path"
           done
           node --check server/server.mjs
@@ -52,9 +52,9 @@ jobs:
             for(let i=0;i<100;i++){try{if((await fetch(base+'/healthz')).ok){healthy=true;break;}}catch{}await new Promise(r=>setTimeout(r,100));}
             assert(healthy,'server failed to listen: '+log);
             const catalog=await(await fetch(base+'/api/rooms')).json();
-            assert.deepEqual(catalog.maps,['q3dm1','q3dm7','q3dm17','q3tourney2']);
+            assert.deepEqual(catalog.maps,['q3dm1','q3dm7','q3dm17','q3tourney2','inferno_wingman']);
             const create=map=>fetch(base+'/api/rooms',{method:'POST',headers:{Origin:base,'Content-Type':'application/json'},body:JSON.stringify({map,name:'Cloud test'})});
-            const invalid=await create('inferno_wingman');assert.equal(invalid.status,400,'uninstalled map was advertised');
+            const invalid=await create('uninstalled_map');assert.equal(invalid.status,400,'uninstalled map was advertised');
             const response=await create('q3dm1');const room=await response.json();
             assert.equal(response.status,201,JSON.stringify(room)+'\n'+log);
             assert.equal(room.map,'q3dm1');assert.match(room.ownerToken,/^[a-f0-9]{64}$/);
