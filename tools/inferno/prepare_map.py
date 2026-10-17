@@ -245,7 +245,7 @@ def main():
         lines=[name,"{","q3map_shadeAngle 60","surfaceparm nonsolid"]
         if material.get("doubleSided",False):lines.append("cull disable")
         if alpha=="BLEND":lines.append("sort banner")
-        lines+=["{","map "+name+extension,"rgbGen vertex","alphaGen vertex"]
+        lines+=["{","map "+name+extension,"rgbGen vertex","alphaGen identity" if alpha=="OPAQUE" else "alphaGen vertex"]
         if alpha=="MASK":lines+=["alphaFunc GE128","depthWrite"]
         elif alpha=="BLEND":lines.append("blendFunc blend")
         lines+=["}","}"];shaders.append("\n".join(lines))
