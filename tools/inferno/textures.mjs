@@ -88,7 +88,7 @@ const chrome=spawn(process.env.CHROME_BIN||'google-chrome',[
 ],{stdio:['ignore','ignore','pipe']});
 chrome.stderr.on('data',()=>{});
 chrome.on('error',error=>{for(const item of pending.values())item.reject(error);});
-let socket,sequence=0,watchdog;
+let socket,sequence=0,watchdog,call;
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
 try{
     const active=join(chromeDir,'DevToolsActivePort');
@@ -98,7 +98,7 @@ try{
     socket=new WebSocket('ws://127.0.0.1:'+port+path);
     await new Promise((ok,no)=>{socket.addEventListener('open',ok,{once:true});socket.addEventListener('error',no,{once:true});});
     socket.addEventListener('message',event=>{const message=JSON.parse(event.data),item=pending.get(message.id);if(item){pending.delete(message.id);message.error?item.reject(Error(JSON.stringify(message.error))):item.resolve(message.result);}});
-    const call=(method,params={},sessionId)=>new Promise((resolveCall,reject)=>{
+    call=(method,params={},sessionId)=>new Promise((resolveCall,reject)=>{
         const id=++sequence;pending.set(id,{resolve:resolveCall,reject});
         socket.send(JSON.stringify({id,method,params,...(sessionId?{sessionId}:{})}));
     });
@@ -117,7 +117,18 @@ try{
     if(completed.size!==jobs.length)throw Error('Not every texture was converted');
     console.log(result.result.value);
 }finally{
-    clearTimeout(watchdog);socket?.close();chrome.kill('SIGTERM');server.closeAllConnections();server.close();
+    clearTimeout(watchdog);
+    if(call&&socket?.readyState===WebSocket.OPEN){
+        await Promise.race([call('Browser.close'),delay(2000)]).catch(()=>{});
+    }
+    socket?.close();
+    if(chrome.exitCode===null)chrome.kill('SIGTERM');
+    if(chrome.exitCode===null)await Promise.race([new Promise(r=>chrome.once('close',r)),delay(5000)]);
+    if(chrome.exitCode===null)chrome.kill('SIGKILL');
+    server.closeAllConnections();server.close();
     // Only this process's fresh temporary profile is removed.
-    if(chromeDir.startsWith(join(tmpdir(),'inferno-chrome-')))rmSync(chromeDir,{recursive:true,force:true,maxRetries:5,retryDelay:100});
+    if(chromeDir.startsWith(join(tmpdir(),'inferno-chrome-'))){
+        try{rmSync(chromeDir,{recursive:true,force:true,maxRetries:5,retryDelay:100});}
+        catch{console.log('Temporary browser profile will be removed with the ephemeral runner.');}
+    }
 }
