@@ -4,11 +4,12 @@ import { createReadStream, statSync } from 'node:fs';
 import { resolve, extname, dirname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createEngine } from './engine.mjs';
+import { readGameData } from './game-data.mjs';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'../web');
 const rooms=new Map(); let nextPeer=2, creating=0;
 const maxRooms=Math.min(4,Math.max(1,Number(process.env.MAX_ROOMS)||2));
-const maps=['q3dm1','q3dm7','q3dm17','q3tourney2'];
+const maps=readGameData(root).maps;
 const types={'.html':'text/html; charset=utf-8','.js':'text/javascript','.wasm':'application/wasm','.json':'application/json'};
 function frame(opcode,data=Buffer.alloc(0)) {
     const size=data.length, header=Buffer.alloc(size<126?2:4); header[0]=128|opcode;
