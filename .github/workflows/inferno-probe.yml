@@ -1,4 +1,4 @@
-name: Probe official Inferno data
+name: Build genuine Inferno Wingman candidate
 on:
   push:
     branches: [codex/inferno-import]
@@ -12,7 +12,7 @@ concurrency:
 jobs:
   probe:
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 90
     steps:
       - name: Download pinned SteamRE downloader
         shell: bash
@@ -168,6 +168,124 @@ jobs:
           if not report["export_integrity_passed"]:
               raise SystemExit("Incomplete export: missing assets or invalid geometry remain. See reports.")
           PY
+      - name: Prepare genuine Wingman geometry and textures
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p importer quake/baseq3
+          for file in prepare_map.py wingman_region.py wingman-source.json region-source.json lighting-source.json textures.mjs; do
+            curl --fail --location --retry 3 "https://raw.githubusercontent.com/Aqtaii/quake3-web-arena/${{ github.sha }}/tools/inferno/$file" -o "importer/$file"
+          done
+          python3 importer/prepare_map.py exported quake/baseq3 importer > reports/preparation.log 2>&1 || { tail -n 100 reports/preparation.log; exit 1; }
+          cat reports/preparation.log
+          node importer/textures.mjs exported quake/baseq3/texture-jobs.json quake/baseq3 > reports/textures.log 2>&1 || { tail -n 100 reports/textures.log; exit 1; }
+          tail -n 10 reports/textures.log
+          cp quake/baseq3/preparation-report.json reports/
+      - name: Verify and inspect maintained Quake map compiler
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p tools/compiler reports
+          curl --fail --location --retry 3 --proto '=https' --tlsv1.2 \
+            https://github.com/Garux/netradiant-custom/releases/download/20260114/netradiant-custom-20260114-linux-x86_64.7z \
+            -o tools/compiler.7z
+          echo 'f48f6f1d0db2b910ef9cb5dc5d8a722852510f3c5c278dc17615c0466b8a7a3d  tools/compiler.7z' | sha256sum --check
+          if command -v 7z >/dev/null; then extractor=7z; else extractor=7zz; fi
+          "$extractor" x -y -otools/compiler tools/compiler.7z > reports/extract.log
+          find tools/compiler -maxdepth 3 -type f
+          python3 - <<'PY'
+          import pathlib, struct
+          for path in pathlib.Path("tools/compiler").rglob("*"):
+              if path.is_file() and path.suffix.lower() == ".appimage":
+                  data = path.read_bytes()
+                  offset = data.find(b"hsqs")
+                  while offset >= 0:
+                      if len(data) > offset + 96 and struct.unpack_from("<H", data, offset + 28)[0] == 4:
+                          pathlib.Path("tools/compiler.squashfs").write_bytes(data[offset:])
+                          print("Extracted SquashFS payload without running AppImage:", path, offset)
+                          break
+                      offset = data.find(b"hsqs", offset + 1)
+                  else:
+                      raise SystemExit("No supported SquashFS filesystem found")
+          PY
+          if [ -f tools/compiler.squashfs ]; then
+            if command -v unsquashfs >/dev/null; then
+              unsquashfs -d tools/compiler/image tools/compiler.squashfs >> reports/extract.log
+            else
+              echo "Cloud runner has no compatible SquashFS extractor."
+              exit 1
+            fi
+          fi
+          find tools/compiler -type f -name '*q3map2*'
+          compiler=$(find tools/compiler -type f \( -name q3map2 -o -name q3map2.x86_64 \) | head -n 1)
+          test -n "$compiler"
+          chmod +x "$compiler"
+          set +e
+          "$compiler" -help > reports/q3map2-help.txt 2>&1
+          status=$?
+          set -e
+          cat reports/q3map2-help.txt
+          if [ "$status" -gt 1 ]; then exit "$status"; fi
+          grep -iq 'q3map' reports/q3map2-help.txt
+          command -v magick || command -v convert || true
+          command -v google-chrome || command -v chromium || true
+          printf '%s\n' "$compiler" > reports/compiler-path.txt
+      - name: Compile original geometry into Quake BSP
+        shell: bash
+        run: |
+          set -euo pipefail
+          compiler=$(cat reports/compiler-path.txt)
+          map="$PWD/quake/baseq3/maps/inferno_wingman.map"
+          timeout 1800 "$compiler" -game quake3 -fs_basepath "$PWD/quake" -meta "$map" > reports/bsp.log 2>&1 || { tail -n 100 reports/bsp.log; exit 1; }
+          tail -n 35 reports/bsp.log
+          timeout 600 "$compiler" -game quake3 -fs_basepath "$PWD/quake" -vis -fast "$map" > reports/vis.log 2>&1 || { tail -n 100 reports/vis.log; exit 1; }
+          timeout 1800 "$compiler" -game quake3 -fs_basepath "$PWD/quake" -light -fast -samples 2 "$map" > reports/light.log 2>&1 || { tail -n 100 reports/light.log; exit 1; }
+          tail -n 35 reports/light.log
+      - name: Validate and preserve playable-map candidate
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import pathlib, struct, json, zipfile, hashlib
+          root=pathlib.Path("quake/baseq3")
+          data=(root/"maps/inferno_wingman.bsp").read_bytes()
+          assert data[:4]==b"IBSP" and struct.unpack_from("<I",data,4)[0]==46
+          lumps=[struct.unpack_from("<II",data,8+i*8) for i in range(17)]
+          assert all(o>=0 and n>=0 and o+n<=len(data) for o,n in lumps)
+          off,length=lumps[13]
+          assert length%104==0
+          surfaces=[struct.unpack_from("<26i",data,off+i) for i in range(0,length,104)]
+          assert surfaces and max(s[13] for s in surfaces)<1000, "Quake tess vertex limit"
+          assert max(s[15] for s in surfaces)<6000, "Quake tess index limit"
+          assert lumps[8][1]>0, "No collision brushes"
+          entities=data[lumps[0][0]:sum(lumps[0])].decode()
+          assert entities.count('"info_player_deathmatch"')==8
+          out=pathlib.Path("candidate");out.mkdir()
+          packs=[]
+          groups=[[root/"maps/inferno_wingman.bsp",root/"scripts/inferno.shader"]]
+          current=[];size=0
+          for path in sorted((root/"textures").rglob("*")):
+              if not path.is_file():continue
+              if current and size+path.stat().st_size>40*1024*1024:
+                  groups.append(current);current=[];size=0
+              current.append(path);size+=path.stat().st_size
+          if current:groups.append(current)
+          for i,group in enumerate(groups):
+              path=out/("inferno-map.pk3" if i==0 else "inferno-textures-%02d.pk3"%i)
+              with zipfile.ZipFile(path,"w",zipfile.ZIP_DEFLATED,compresslevel=6) as z:
+                  for p in group:z.write(p,p.relative_to(root).as_posix())
+              packs.append({"file":path.name,"bytes":path.stat().st_size,"sha256":hashlib.sha256(path.read_bytes()).hexdigest()})
+          report={"bsp_bytes":len(data),"surfaces":len(surfaces),"collision_brushes":lumps[8][1]//12,"packs":packs,"runtime_tested":False}
+          (out/"candidate.json").write_text(json.dumps(report,indent=2))
+          pathlib.Path("reports/candidate.json").write_text(json.dumps(report,indent=2))
+          print(json.dumps(report,indent=2))
+          PY
+      - name: Retain compiled candidate for runtime testing
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: inferno-compiled-candidate
+          path: candidate/
+          compression-level: 0
+          retention-days: 3
       - name: Preserve diagnostic reports only
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
