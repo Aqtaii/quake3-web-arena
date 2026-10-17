@@ -106,7 +106,11 @@ jobs:
                       selected.append({"fields": fields, "raw": block.strip()})
               records.append({"path": str(path), "wingman_entities": selected})
           pathlib.Path("reports/gameplay-entities.json").write_text(json.dumps(records, indent=2) + "\n")
-          print(json.dumps(records, indent=2)[:120000])
+          keys = ("classname", "targetname", "origin", "angles", "scales", "model", "hammeruniqueid", "enabled", "startdisabled", "solid", "solidity")
+          summary = [{"path": item["path"], "entities": [
+              {key: entity["fields"][key] for key in keys if key in entity["fields"]}
+              for entity in item["wingman_entities"]]} for item in records]
+          print(json.dumps(summary, indent=2))
           PY
       - name: Preserve original entity diagnostics
         if: always()
