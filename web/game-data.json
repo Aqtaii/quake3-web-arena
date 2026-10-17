@@ -3,7 +3,22 @@
   "packages": [
     "pak0.pk3",
     "pak1.pk3",
-    "pak9.pk3"
+    "pak9.pk3",
+    "inferno-map.pk3",
+    "inferno-textures-01.pk3"
   ],
-  "source": "Quake III Arena Demo 1.11, original media with Steve mod and inventory header"
+  "source": "Quake III Arena Demo 1.11, original media with Steve mod and inventory header",
+  "serverPackages": [
+    "pak0.pk3",
+    "pak1.pk3",
+    "pak9.pk3",
+    "inferno-map.pk3"
+  ],
+  "maps": [
+    "q3dm1",
+    "q3dm7",
+    "q3dm17",
+    "q3tourney2",
+    "inferno_wingman"
+  ]
 }

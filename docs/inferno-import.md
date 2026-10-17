@@ -1,7 +1,7 @@
 # Genuine Inferno Wingman import
 
-Development branch: codex/inferno-import. Main and the deployed game remain unchanged.
-The map is not advertised to players until a compiled package passes runtime checks.
+Compiled and runtime-verified in [Run 39037434835](https://github.com/Aqtaii/quake3-web-arena/actions/runs/39037434835).
+Registered as `inferno_wingman` (`Inferno · Yoldaş`) in `web/game-data.json` with server-side map-only loading (`inferno-map.pk3` in `serverPackages`).
 
 ## Verified source
 
