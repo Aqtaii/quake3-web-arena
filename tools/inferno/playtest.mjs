@@ -51,7 +51,7 @@ try {
     };
     const sessions=[];
     for(let i=0;i<2;i++){
-        const target=await call('Target.createTarget',{url:'about:blank',newWindow:true});
+        const target=await call('Target.createTarget',{url:'about:blank'});
         const attached=await call('Target.attachToTarget',{targetId:target.targetId,flatten:true}),session=attached.sessionId;
         sessions.push(session);await call('Runtime.enable',{},session);await call('Page.enable',{},session);
         await call('Emulation.setDeviceMetricsOverride',{width:960,height:720,deviceScaleFactor:1,mobile:false},session);
