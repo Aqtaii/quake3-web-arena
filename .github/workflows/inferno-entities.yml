@@ -94,7 +94,7 @@ jobs:
               print("FORMAT SAMPLE", text[:2000])
               selected = []
               for block in re.split(r"(?m)^====\d+====\s*$", text):
-                  if re.search(r"2v2|wingman|scrim", block, re.I):
+                  if re.search(r"2v2|wingman|scrim|light_environment|env_sky|light_omni|light_spot", block, re.I):
                       fields = {}
                       for line in block.splitlines():
                           match = re.match(r"^(\w+)\s+(.+)$", line)
@@ -115,7 +115,9 @@ jobs:
           assert len(spawns) == 8, "Expected the original eight 2v2 spawns"
           assert sum(entity["classname"] == "info_player_terrorist" for entity in spawns) == 4
           assert sum(entity["classname"] == "info_player_counterterrorist" for entity in spawns) == 4
-          print(json.dumps(summary, indent=2))
+          lighting = [entity["fields"] for record in records for entity in record["wingman_entities"]
+                      if entity["fields"].get("classname", "").startswith(("light_", "env_sky"))]
+          print(json.dumps({"wingman": summary, "lighting": lighting}, indent=2))
           PY
       - name: Preserve original entity diagnostics
         if: always()
