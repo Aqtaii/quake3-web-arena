@@ -132,6 +132,29 @@ jobs:
                       if entity["fields"].get("classname", "").startswith(("light_", "env_sky"))]
           print(json.dumps({"wingman": summary, "lighting": lighting}, indent=2))
           PY
+      - name: Derive the original Wingman navigation component
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p region-tools reports/blockers
+          for name in wingman_region.py wingman-source.json; do
+            curl --fail --location --proto '=https' --tlsv1.2 \
+              "https://raw.githubusercontent.com/Aqtaii/quake3-web-arena/9e2a7680fa52a5f7fe9c46adde7ffc2309d732a4/tools/inferno/$name" \
+              -o "region-tools/$name"
+          done
+          paths=$(python3 - <<'PY'
+          import json
+          source=json.load(open("region-tools/wingman-source.json"))
+          names=[json.loads(e["model"].split("resource_name:",1)[1])+"_c"
+                 for e in source["entities"] if e["classname"]=="func_nav_blocker"]
+          print(",".join(names))
+          PY
+          )
+          tools/viewer/Source2Viewer-CLI -i cs2/game/csgo/maps/de_inferno.vpk \
+            --vpk_filepath "$paths" -d --gltf_export_format gltf --gltf_export_extras \
+            -o reports/blockers/ > reports/blockers.log 2>&1
+          python3 region-tools/wingman_region.py reports/navigation-areas.json \
+            region-tools/wingman-source.json reports/blockers reports/wingman-region.json
       - name: Preserve original entity diagnostics
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
