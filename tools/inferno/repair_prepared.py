@@ -17,21 +17,29 @@ COUNTS = {"SCALAR": 1, "VEC2": 2, "VEC3": 3, "VEC4": 4}
 MAX_PRIM_VERTS = 850
 MAX_PRIM_TRIS = 1700
 
-STRUCTURAL_RENDER_KEYWORDS = (
-    "floor", "ground", "wall04", "wall_09_blend", "facade", "plaster", "brick",
-    "tile", "stair", "step", "ceiling", "house", "apartment_interior", "arch",
-    "pillar", "column", "road", "pavement", "cobble", "gravel", "dirt_blend",
-    "concrete_blend", "concrete_02", "shop_front", "window", "balcony",
-    "courtyard", "wood_crate", "concrete_bag", "sandbag", "door_simple",
-    "door_double", "barn_door", "rollup_door_02", "shingles", "barricade", "curb",
-    "stone", "bombsite"
+PROTECTED_ARCH_RE = re.compile(
+    r"floor|ground|wall04|wall_09_blend|facade|plaster|brick|tile|stair|step|ceiling|house|"
+    r"apartment_interior|arch|pillar|column|road|pavement|cobble|gravel|dirt_blend|"
+    r"concrete_blend|concrete_02|shop_front|window|balcony|courtyard|wood_crate|"
+    r"concrete_bag|sandbag|door_simple|door_double|barn_door|rollup_door_02|shingles|barricade|curb",
+    re.I,
+)
+TRIM_BLOCK_RE = re.compile(r"wall_09_trim|trim_block", re.I)
+
+PURE_CLUTTER_RE = re.compile(
+    r"blocklight|cable_kit|hanging_clothes|door_details|rollup_door_details|wall_09_debris|"
+    r"postcard_kit|wine_bottle|ashtray|paint_can|nailbox|hammer|drill|tapemeasure|tableware|"
+    r"letter|calendar|gutter_kit|trike|bicycle|vespa|satelite|antenna|trash|toolbox|"
+    r"wheelbarrow|dolly|radio|grapplinghook|bird_spike|book_kit|luggage|bucket|cone|watering_can",
+    re.I,
 )
 
-NON_SOLID_KEYWORDS = (
-    "foliage", "ivy", "leaves", "leaf", "vine", "fern", "weed", "grass",
-    "cable", "wire", "rope", "chain", "cloth", "fabric", "curtain", "banner",
-    "flag", "decal", "graffiti", "poster", "paper", "trash", "bottle", "flower",
-    "plant", "spiderweb", "lightbulb", "lantern"
+NON_SOLID_NODE_RE = re.compile(
+    r"blocklight|overlay|bush|plant|cypress|willow|spindle|grass|leaf|leaves|cable|wire|"
+    r"clothes|debris|bicycle|trike|vespa|postcard|calendar|letter|bottle|cup|plate|bowl|"
+    r"vase|ashtray|paint_can|hammer|drill|rake|tapemeasure|nailbox|picture|bulb|lamp|"
+    r"gutter|antenna|satelite|curtain|flag|tarp|soil_trail",
+    re.I,
 )
 
 
@@ -81,9 +89,9 @@ def tri_metrics(p0, p1, p2):
     cy = uz*vx - ux*vz
     cz = ux*vy - uy*vx
     norm_sq = cx*cx + cy*cy + cz*cz
-    area_sq = 0.25 * norm_sq
+    area2_sq = norm_sq
     abs_nz = abs(cz) / math.sqrt(norm_sq) if norm_sq > 1e-12 else 0.0
-    return max_edge_sq, area_sq, abs_nz
+    return max_edge_sq, area2_sq, abs_nz
 
 
 def overlaps_box(p0, p1, p2, box):
@@ -131,9 +139,10 @@ def repair_render_and_collect_collision(baseq3):
     meshes, accessors, views, materials, new_blob = [], [], [], [], bytearray()
     material_map = {}
     used_material_names = set()
+    non_overlay_materials = set()
 
-    render_box = ([384.0, -890.0, 24.0], [2790.0, 1666.0, 680.0])
-    collision_box = ([448.0, -826.0, 55.0], [2726.0, 1602.0, 310.0])
+    render_box = ([256.0, -1018.5, 16.0], [2917.5, 1794.5, 752.0])
+    collision_box = ([384.0, -890.0, 60.0], [2790.0, 1667.0, 340.0])
 
     structural_collision_gltf_tris = []
     kept_tris_total = 0
@@ -159,10 +168,13 @@ def repair_render_and_collect_collision(baseq3):
         node.pop("weights", None)
         if original_mesh is None or node_id not in matrices:
             continue
-        node_name = node.get("name", "").lower()
-        if "blocklight" in node_name:
+        node_name = node.get("name", "")
+        if PURE_CLUTTER_RE.search(node_name):
             continue
-        is_overlay = "mesh_overlay" in node_name
+        is_overlay = "mesh_overlay" in node_name.lower()
+        is_prot_arch = bool(PROTECTED_ARCH_RE.search(node_name)) and not bool(TRIM_BLOCK_RE.search(node_name))
+        can_collide = not bool(NON_SOLID_NODE_RE.search(node_name))
+
         transform = matrices[node_id]
         new_primitives = []
 
@@ -171,23 +183,12 @@ def repair_render_and_collect_collision(baseq3):
             if mat_idx is None:
                 continue
             mat_name = doc["materials"][mat_idx]["name"]
-            job = job_by_mat.get(mat_name, {})
-            inp = (job.get("input") or "").lower()
-            alpha_mode = job.get("alphaMode", "OPAQUE")
-
-            if "tools_solid_block_light" in inp:
+            if mat_name == "textures/inferno/m0000":
                 continue
+            job = job_by_mat.get(mat_name, {})
+            alpha_mode = job.get("alphaMode", "OPAQUE")
             if is_overlay and alpha_mode == "OPAQUE":
                 continue
-
-            is_structural_render = is_overlay or alpha_mode != "OPAQUE" or any(
-                k in inp for k in STRUCTURAL_RENDER_KEYWORDS
-            )
-            can_collide = (
-                (not is_overlay)
-                and alpha_mode == "OPAQUE"
-                and not any(k in inp for k in NON_SOLID_KEYWORDS)
-            )
 
             attrs = prim["attributes"]
             positions = accessor_values(doc, blob, attrs["POSITION"])
@@ -199,20 +200,20 @@ def repair_render_and_collect_collision(baseq3):
             for i in range(0, len(indices), 3):
                 i0, i1, i2 = indices[i], indices[i+1], indices[i+2]
                 p0, p1, p2 = src_pts[i0], src_pts[i1], src_pts[i2]
-                max_edge_sq, area_sq, abs_nz = tri_metrics(p0, p1, p2)
+                max_edge_sq, area2_sq, abs_nz = tri_metrics(p0, p1, p2)
+                if area2_sq < 0.0625:
+                    continue
 
                 if can_collide and overlaps_box(p0, p1, p2, collision_box):
-                    # Walkable floors/ramps/stairs (abs_nz >= 0.5): keep all triangles with edge >= 3 in and area >= 0.5
-                    # Vertical walls/crates/pillars (abs_nz < 0.5): keep structural triangles with edge >= 20 in and area >= 16
-                    if (abs_nz >= 0.5 and max_edge_sq >= 9.0 and area_sq >= 0.25 and max(p0[2], p1[2], p2[2]) <= 260.0) or (
-                        abs_nz < 0.5 and is_structural_render and max_edge_sq >= 400.0 and area_sq >= 16.0
+                    # Walkable floors/stairs/ramps (abs_nz >= 0.45) or protected architectural walls/crates/doors (max_edge >= 16)
+                    if (abs_nz >= 0.45 and max_edge_sq >= 64.0 and area2_sq >= 4.0 and max(p0[2], p1[2], p2[2]) <= 260.0) or (
+                        is_prot_arch and max_edge_sq >= 256.0 and area2_sq >= 16.0
                     ):
                         structural_collision_gltf_tris.append((gltf_pts[i0], gltf_pts[i1], gltf_pts[i2]))
 
                 if not overlaps_box(p0, p1, p2, render_box):
                     continue
-                min_edge_sq = 16.0 if (is_structural_render or abs_nz >= 0.5) else 576.0
-                if max_edge_sq < min_edge_sq:
+                if not (is_prot_arch or is_overlay) and max_edge_sq < 256.0:
                     continue
                 kept.extend((i0, i1, i2))
 
@@ -223,6 +224,8 @@ def repair_render_and_collect_collision(baseq3):
                 material_map[mat_name] = len(materials)
                 materials.append({"name": mat_name})
             used_material_names.add(mat_name)
+            if not is_overlay:
+                non_overlay_materials.add(mat_name)
             new_mat_idx = material_map[mat_name]
 
             for chunk in chunk_triangles(kept):
@@ -269,8 +272,8 @@ def repair_render_and_collect_collision(baseq3):
         "buffers": [{"uri": render_path.with_suffix(".bin").name, "byteLength": len(new_blob)}],
     }
     render_path.write_text(json.dumps(out_doc, separators=(",", ":")) + "\n")
-    print(f"Repaired render.gltf: {kept_tris_total} tris, {kept_prims_total} chunked primitives, {len(materials)} materials, {len(new_blob)} bytes")
-    return used_material_names, structural_collision_gltf_tris
+    print(f"Repaired render.gltf: {kept_tris_total} tris, {kept_prims_total} chunked primitives, {len(materials)} materials, {len(new_blob)} bytes", flush=True)
+    return used_material_names, non_overlay_materials, structural_collision_gltf_tris
 
 
 def repair_physics(baseq3, structural_collision_gltf_tris):
@@ -393,22 +396,11 @@ def repair_physics(baseq3, structural_collision_gltf_tris):
     }
     phys_path.write_text(json.dumps(out_doc, separators=(",", ":")) + "\n")
     total_tris = kept_phys_tris + len(structural_collision_gltf_tris)
-    print(f"Repaired physics.gltf: {kept_phys_tris} entity tris + {len(structural_collision_gltf_tris)} world structural tris = {total_tris} total collision tris")
+    print(f"Repaired physics.gltf: {kept_phys_tris} entity tris + {len(structural_collision_gltf_tris)} world structural tris = {total_tris} total collision tris", flush=True)
     return all_collision_src_tris
 
 
-def point_in_tri_2d(px, py, a, b, c):
-    def sign(x1, y1, x2, y2, x3, y3):
-        return (x1 - x3) * (y2 - y3) - (x2 - x3) * (y1 - y3)
-    d1 = sign(px, py, a[0], a[1], b[0], b[1])
-    d2 = sign(px, py, b[0], b[1], c[0], c[1])
-    d3 = sign(px, py, c[0], c[1], a[0], a[1])
-    has_neg = (d1 < -0.05) or (d2 < -0.05) or (d3 < -0.05)
-    has_pos = (d1 > 0.05) or (d2 > 0.05) or (d3 > 0.05)
-    return not (has_neg and has_pos)
-
-
-def repair_map_and_shaders(baseq3, all_collision_src_tris):
+def repair_map_and_shaders(baseq3, all_collision_src_tris, non_overlay_materials):
     map_path = baseq3 / "maps/inferno_wingman.map"
     map_text = map_path.read_text()
     map_text = map_text.replace(" textures/inferno/sky ", " inferno/sky ")
@@ -423,33 +415,45 @@ def repair_map_and_shaders(baseq3, all_collision_src_tris):
         sx, sy, sz = map(float, s.split())
         best_floor = -math.inf
         for a, b, c in all_collision_src_tris:
-            if min(a[0], b[0], c[0]) - 24 <= sx <= max(a[0], b[0], c[0]) + 24 and min(a[1], b[1], c[1]) - 24 <= sy <= max(a[1], b[1], c[1]) + 24:
-                if point_in_tri_2d(sx, sy, a, b, c):
-                    tz = max(a[2], b[2], c[2])
-                    if tz <= sz + 8 and tz > best_floor:
-                        best_floor = tz
+            min_x, max_x = min(a[0], b[0], c[0]), max(a[0], b[0], c[0])
+            min_y, max_y = min(a[1], b[1], c[1]), max(a[1], b[1], c[1])
+            max_z = max(a[2], b[2], c[2])
+            if max_x >= sx - 15.0 and min_x <= sx + 15.0 and max_y >= sy - 15.0 and min_y <= sy + 15.0:
+                if max_z <= sz - 4.0 and max_z > best_floor:
+                    best_floor = max_z
         if best_floor == -math.inf:
-            # Fallback to nearest floor triangle within 32-unit XY radius (player bbox is 30x30)
-            for a, b, c in all_collision_src_tris:
-                cx = (a[0] + b[0] + c[0]) / 3.0
-                cy = (a[1] + b[1] + c[1]) / 3.0
-                if (cx - sx)**2 + (cy - sy)**2 <= 32.0**2:
-                    tz = max(a[2], b[2], c[2])
-                    if tz <= sz + 8 and tz > best_floor:
-                        best_floor = tz
+            raise RuntimeError(f"Spawn {idx} at ({sx}, {sy}, {sz}) lacks solid floor underneath")
         new_sz = max(sz, math.ceil(best_floor + 28.0))
         if new_sz != sz:
             map_text = map_text.replace(f'"origin" "{s}"', f'"origin" "{sx:g} {sy:g} {new_sz:g}"', 1)
-        print(f"Spawn {idx}: origin=({sx}, {sy}, {sz} -> {new_sz}) -> solid floor below at Z={best_floor:.2f} (clearance={new_sz - best_floor:.2f})")
-        if best_floor < -100 or new_sz - best_floor > 120:
-            raise RuntimeError(f"Spawn {idx} at ({sx}, {sy}, {sz}) lacks solid floor underneath (best_floor={best_floor})")
+        print(f"Spawn {idx}: origin=({sx}, {sy}, {sz} -> {new_sz}) -> solid floor below at Z={best_floor:.2f} (clearance={new_sz - best_floor:.2f})", flush=True)
 
     map_path.write_text(map_text)
 
     shader_path = baseq3 / "scripts/inferno.shader"
-    shader_text = shader_path.read_text()
-    shader_text = shader_text.replace("sort banner\n{", "polygonOffset\nsort banner\n{")
-    shader_path.write_text(shader_text)
+    blocks = shader_path.read_text().strip().split("\n\n")
+    new_blocks = []
+    for block in blocks:
+        lines = block.strip().splitlines()
+        if not lines:
+            continue
+        shader_name = lines[0].strip()
+        if shader_name in non_overlay_materials and "blendFunc blend" in block:
+            # World 2-layer blend surface: render opaque with depth write, not semi-transparent banner
+            filtered = []
+            for line in lines:
+                if line.strip() in ("sort banner", "blendFunc blend", "polygonOffset"):
+                    continue
+                if line.strip() == "alphaGen vertex":
+                    filtered.append("alphaGen identity")
+                else:
+                    filtered.append(line)
+            new_blocks.append("\n".join(filtered))
+        elif "blendFunc blend" in block and "polygonOffset" not in block:
+            new_blocks.append(block.replace("sort banner\n{", "polygonOffset\nsort banner\n{"))
+        else:
+            new_blocks.append(block)
+    shader_path.write_text("\n\n".join(new_blocks) + "\n")
 
 
 def next_pow2_down(n, max_dim):
@@ -507,14 +511,14 @@ def optimize_textures(baseq3, used_material_names):
         kept_files += 1
         total_bytes += path.stat().st_size
 
-    print(f"Optimized textures: kept {kept_files}, removed {removed_files} unused, total size = {total_bytes / (1024*1024):.2f} MB")
+    print(f"Optimized textures: kept {kept_files}, removed {removed_files} unused, total size = {total_bytes / (1024*1024):.2f} MB", flush=True)
 
 
 def main():
     baseq3 = pathlib.Path(sys.argv[1]).resolve()
-    used_materials, world_collision_tris = repair_render_and_collect_collision(baseq3)
+    used_materials, non_overlay_materials, world_collision_tris = repair_render_and_collect_collision(baseq3)
     all_collision_tris = repair_physics(baseq3, world_collision_tris)
-    repair_map_and_shaders(baseq3, all_collision_tris)
+    repair_map_and_shaders(baseq3, all_collision_tris, non_overlay_materials)
     optimize_textures(baseq3, used_materials)
 
 
