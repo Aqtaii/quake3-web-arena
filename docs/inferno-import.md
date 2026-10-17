@@ -20,6 +20,26 @@ It uploads diagnostic reports only, not a playable map.
 SteamRE DepotDownloader 3.4.0 is pinned to a release URL.
 Source 2 Viewer 20.1 is pinned and its archive checked against the release SHA-256.
 
+## Verified geometry and Wingman metadata
+
+[Run 39026304781](https://github.com/Aqtaii/quake3-web-arena/actions/runs/39026304781)
+exported 6,641 render meshes and a separate 92-mesh physics document.
+The initial render export had no materials or images because the shared CS2 packages
+had not yet been resolved. A successful exporter exit code alone is not completeness.
+
+[Run 39026746105](https://github.com/Aqtaii/quake3-web-arena/actions/runs/39026746105)
+identified 48 original Wingman-related entities, including four terrorist and four
+counterterrorist spawn placements. Their original coordinates and models are recorded
+in `tools/inferno/wingman-source.json`.
+
+These metadata are not a playable map. In particular, `func_nav_blocker` changes
+bot navigation and must not be converted directly into a solid player wall.
+
+The dependency resolver reads official VPK indexes, requests required archive chunks
+one at a time, extracts requested resources, checks their VPK CRC32 and removes each
+chunk afterward. The export auditor checks geometry counts, buffer bounds and
+missing resource references. Both run on the GitHub runner, with no local project clone.
+
 ## Conversion stages still required
 
 1. Export the real map geometry, material references and physics from the official VPK.
