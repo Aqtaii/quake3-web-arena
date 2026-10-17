@@ -1,13 +1,15 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { readGameData } from './game-data.mjs';
 const packageCache=new Map();
 
 // The same original-source WASM runs in dedicated mode; no replacement physics.
 export async function createEngine(root, send, map = 'q3dm1') {
     const files = new Map(), handles = new Map(), queue = [];
     let nextFd = 3, exports, memory, lastPeer = 0;
-    const manifest = JSON.parse(readFileSync(join(root, 'game-data.json')));
-    for (const name of manifest.packages) {
+    const manifest = readGameData(root);
+    if (!manifest.maps.includes(map)) throw Error('Unsupported map');
+    for (const name of manifest.serverPackages) {
         if (!/^pak[0-9]+\.pk3$/.test(name)) throw Error('Invalid package');
         const path=join(root,'baseq3',name);
         if(!packageCache.has(path))packageCache.set(path,readFileSync(path));
@@ -44,7 +46,6 @@ export async function createEngine(root, send, map = 'q3dm1') {
     }
     exports=(await WebAssembly.instantiate(module,{env})).exports; memory=exports.memory;
     function command(text, init=false) { const data=new TextEncoder().encode(text+'\0'), p=exports.wasm_q3_alloc(data.length); bytes(p,data.length).set(data); try { (init?exports.wasm_q3_init:exports.wasm_q3_console_command)(p); } finally { exports.wasm_q3_free(p); } }
-    if(!/^q3(dm1|dm7|dm17|tourney2)$/.test(map)) throw Error('Unsupported demo map');
     command('+set dedicated 1 +set sv_pure 0 +set vm_game 0 +set vm_cgame 0 +set vm_ui 0 +set sv_maxclients 8 +set sv_hostname WebArena +set g_gametype 0 +set rconPassword "" +set sv_floodProtect 1 +set sv_timeout 20 +set sv_zombietime 2 +set sv_allowDownload 0 +map '+map,true);
     return {
         packet(peer,data) { if(queue.length<1024 && data.length<=16384) queue.push({peer,data}); },
